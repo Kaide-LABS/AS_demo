@@ -25,7 +25,11 @@ async def generate_structured(
     thinking_level: types.ThinkingLevel | None = None,
     system_instruction: str | None = None,
 ) -> tuple[BaseModel, dict]:
-    if not client: return response_schema(), {} # mock for tests/demo if no client
+    if not client:
+        try:
+            return response_schema(), {}
+        except Exception:
+            return response_schema.model_construct(), {}
     config = {
         "response_mime_type": "application/json",
         "response_json_schema": response_schema.model_json_schema(),

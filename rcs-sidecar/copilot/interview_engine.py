@@ -1,8 +1,12 @@
 import os
 import json
 import uuid
-import redis.asyncio as redis
 from fastapi import UploadFile
+
+try:
+    import redis.asyncio as redis
+except ImportError:
+    redis = None  # type: ignore
 from schemas import InterviewResponse, FieldState
 from field_state import FieldStateEngine
 from copilot.question_generator import generate_next_question
@@ -11,20 +15,25 @@ from theater import TheaterBroadcaster
 
 REDIS_URL = os.getenv("REDIS_URL")
 
+_memory_store: dict[str, dict] = {}
+
 class InterviewEngine:
     def __init__(self):
-        self._redis = redis.from_url(REDIS_URL) if REDIS_URL else None
+        self._redis = redis.from_url(REDIS_URL) if (REDIS_URL and redis) else None
 
     async def _save_state(self, job_id: str, state: dict):
         if self._redis:
             await self._redis.set(f"interview:{job_id}", json.dumps(state))
+        else:
+            _memory_store[job_id] = state
 
     async def _load_state(self, job_id: str) -> dict:
         if self._redis:
             data = await self._redis.get(f"interview:{job_id}")
             if data:
                 return json.loads(data)
-        return {}
+            return {}
+        return _memory_store.get(job_id, {})
 
     async def start(self, project_id: str, brief: str, job_id: str = None) -> InterviewResponse:
         job_id = job_id or str(uuid.uuid4())
@@ -67,7 +76,7 @@ class InterviewEngine:
         target_fields = [k for k, v in state["field_states"].items() if v != FieldState.VALIDATED.value]
         normalized = await normalize_answer(user_answer, target_fields, broadcaster)
         
-        for ans in normalized.normalized:
+        for ans in getattr(normalized, "normalized", None) or []:
             if ans.field_path in state["field_states"]:
                 state["field_states"][ans.field_path] = FieldState.CANDIDATE.value if ans.needs_file_evidence else FieldState.VALIDATED.value
                 
@@ -96,7 +105,7 @@ class InterviewEngine:
             fields_remaining=missing_count,
             fields_total=len(state["field_states"]),
             calibration=calibration,
-            suggested_upload="Upload a brand guidelines PDF" if any(a.needs_file_evidence for a in normalized.normalized) else None
+            suggested_upload="Upload a brand guidelines PDF" if any(getattr(a, "needs_file_evidence", False) for a in (getattr(normalized, "normalized", None) or [])) else None
         )
 
     async def get_state(self, job_id: str) -> dict:

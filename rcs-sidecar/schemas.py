@@ -142,7 +142,7 @@ class RadiantPersonaCalibration(BaseModel):
 
 class TheaterEvent(BaseModel):
     ts_ms: int
-    stage: Literal["ingest", "triage", "field_state", "extract", "merge", "synthesize", "validate", "done", "error"]
+    stage: Literal["ingest", "triage", "field_state", "extract", "merge", "synthesize", "validate", "done", "error", "copilot"]
     message: str
     meta: dict = {}
     trace_id: Optional[str] = None
