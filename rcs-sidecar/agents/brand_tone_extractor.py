@@ -38,7 +38,7 @@ async def brand_tone_extractor(artifacts: list[SourceArtifact], plan: FieldExtra
         return ExtractionResult(agent_name=AGENT_NAME, extracted_fields={}, citations=[], validation_passed=True)
 
     try:
-        result = await generate_structured(MODEL_FLASH, contents, BrandToneExtractionOutput,
+        result, usage = await generate_structured(MODEL_FLASH, contents, BrandToneExtractionOutput,
                                            thinking_level=types.ThinkingLevel.LOW, system_instruction=SYSTEM_PROMPT)
         return ExtractionResult(
             agent_name=AGENT_NAME,

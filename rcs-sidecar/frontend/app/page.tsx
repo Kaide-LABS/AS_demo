@@ -36,7 +36,12 @@ export default function Page() {
     formData.append('job_id', newJobId)
     files.forEach(f => formData.append('artifacts', f))
 
-    const eventSource = new EventSource(`http://127.0.0.1:8080/v1/calibrate/${newJobId}/stream`)
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080'
+    const eventSource = new EventSource(`${API_BASE}/v1/calibrate/${newJobId}/stream`)
+    eventSource.onerror = () => {
+      eventSource.close()
+      setIsProcessing(false)
+    }
     eventSource.addEventListener('theater', (e) => {
       const data = JSON.parse(e.data)
       setEvents(prev => [...prev, data])
@@ -47,7 +52,7 @@ export default function Page() {
     })
 
     try {
-      const res = await fetch('http://127.0.0.1:8080/v1/calibrate', {
+      const res = await fetch(`${API_BASE}/v1/calibrate`, {
         method: 'POST',
         body: formData,
       })

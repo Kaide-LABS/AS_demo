@@ -36,7 +36,7 @@ async def campaign_benchmark_extractor(artifacts: list[SourceArtifact], plan: Fi
         return ExtractionResult(agent_name=AGENT_NAME, extracted_fields={}, citations=[], validation_passed=True)
 
     try:
-        result = await generate_structured(MODEL_FLASH, contents, CampaignBenchmarkExtractionOutput,
+        result, usage = await generate_structured(MODEL_FLASH, contents, CampaignBenchmarkExtractionOutput,
                                            thinking_level=types.ThinkingLevel.LOW, system_instruction=SYSTEM_PROMPT)
         return ExtractionResult(
             agent_name=AGENT_NAME,

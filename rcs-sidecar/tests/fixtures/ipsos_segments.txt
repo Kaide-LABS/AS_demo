@@ -1,0 +1,22 @@
+# Ipsos Shareholder Segmentation Study v3
+
+## Segment 1: Institutional Investors (25.1%)
+Active fund managers and institutional allocators who prioritize quarterly earnings guidance
+and management credibility. Primary information sources: Bloomberg Terminal, sell-side research,
+direct IR contact. Behaviorally characterized by high engagement with earnings calls and
+proxy materials.
+
+## Segment 2: Retail Shareholders (39.3%)
+Individual investors holding direct equity positions. Information sources: financial news
+websites, Reddit/social forums, brokerage app notifications. Lower engagement with formal
+IR communications. Price-sensitive with shorter holding periods.
+
+## Segment 3: ESG-Focused Analysts (15.9%)
+Analysts and portfolio managers applying ESG scoring frameworks. Information sources:
+MSCI ESG ratings, sustainability reports, CDP disclosures. High engagement with
+non-financial reporting. Decision-making driven by governance and environmental metrics.
+
+## Segment 4: Passive Index Holders (19.7%)
+Investors holding through index funds and ETFs. Minimal direct engagement with individual
+company communications. Information sources: fund provider reports, financial media headlines.
+Low brand affinity at the individual company level.

@@ -35,7 +35,7 @@ async def demographic_normalizer(artifacts: list[SourceArtifact], plan: FieldExt
         return ExtractionResult(agent_name=AGENT_NAME, extracted_fields={}, citations=[], validation_passed=True)
 
     try:
-        result = await generate_structured(MODEL_FLASH_LITE, contents, DemographicExtractionOutput,
+        result, usage = await generate_structured(MODEL_FLASH_LITE, contents, DemographicExtractionOutput,
                                            thinking_level=types.ThinkingLevel.MINIMAL, system_instruction=SYSTEM_PROMPT)
         return ExtractionResult(
             agent_name=AGENT_NAME,

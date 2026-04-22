@@ -24,8 +24,8 @@ async def generate_structured(
     response_schema: type[BaseModel],
     thinking_level: types.ThinkingLevel | None = None,
     system_instruction: str | None = None,
-) -> BaseModel:
-    if not client: return response_schema() # mock for tests/demo if no client
+) -> tuple[BaseModel, dict]:
+    if not client: return response_schema(), {} # mock for tests/demo if no client
     config = {
         "response_mime_type": "application/json",
         "response_json_schema": response_schema.model_json_schema(),
@@ -41,7 +41,8 @@ async def generate_structured(
         config=types.GenerateContentConfig(**config),
     )
     try:
-        return response_schema.model_validate_json(response.text)
+        usage = {'input_tokens': response.usage_metadata.prompt_token_count if response.usage_metadata else 0, 'output_tokens': response.usage_metadata.candidates_token_count if response.usage_metadata else 0}
+        return response_schema.model_validate_json(response.text), usage
     except Exception as e:
         raise ValueError(f"Failed to parse generation for model {model}: {e}\nRaw output: {response.text[:2000]}")
 
@@ -55,8 +56,8 @@ async def generate_text(
     contents: str | list,
     thinking_level: types.ThinkingLevel | None = None,
     system_instruction: str | None = None,
-) -> str:
-    if not client: return "mock"
+) -> tuple[str, dict]:
+    if not client: return "mock", {}
     config = {}
     if thinking_level:
         config["thinking_config"] = types.ThinkingConfig(thinking_level=thinking_level)
@@ -68,4 +69,5 @@ async def generate_text(
         contents=contents,
         config=types.GenerateContentConfig(**config) if config else None,
     )
-    return response.text
+    usage = {'input_tokens': response.usage_metadata.prompt_token_count if response.usage_metadata else 0, 'output_tokens': response.usage_metadata.candidates_token_count if response.usage_metadata else 0}
+    return response.text, usage

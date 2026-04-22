@@ -16,7 +16,7 @@ async def triage_agent(artifacts: list[SourceArtifact], broadcaster: TheaterBroa
         for a in artifacts:
             contents += f"artifact_id: {a.artifact_id}\nfilename: {a.filename}\npreview: {a.raw_text[:2000]}\n---\n"
         try:
-            manifest = await generate_structured(
+            manifest, usage = await generate_structured(
                 model=MODEL_FLASH_LITE,
                 contents=contents,
                 response_schema=TriageManifest,
@@ -25,6 +25,7 @@ async def triage_agent(artifacts: list[SourceArtifact], broadcaster: TheaterBroa
             )
             for c in manifest.classifications:
                 await broadcaster.emit("triage", f"Classified {c.artifact_id} as {c.artifact_type.value}")
+            await broadcaster.emit('triage', f'Triage completed', meta=usage)
             return manifest
         except Exception:
             pass  # fall through to heuristic

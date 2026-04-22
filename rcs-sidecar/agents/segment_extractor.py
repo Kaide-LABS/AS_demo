@@ -40,7 +40,7 @@ async def segment_extractor(artifacts: list[SourceArtifact], plan: FieldExtracti
         return ExtractionResult(agent_name=AGENT_NAME, extracted_fields={"segments": []}, citations=[], validation_passed=True)
 
     try:
-        result = await generate_structured(MODEL_FLASH, contents, SegmentExtractionOutput,
+        result, usage = await generate_structured(MODEL_FLASH, contents, SegmentExtractionOutput,
                                            thinking_level=types.ThinkingLevel.LOW, system_instruction=SYSTEM_PROMPT)
         return ExtractionResult(
             agent_name=AGENT_NAME,

@@ -7,6 +7,20 @@ from theater import TheaterBroadcaster
 import uuid
 
 app = FastAPI(title="Radiant Calibration Sidecar", version="1.1.0", redoc_url=None)
+from fastapi.middleware.cors import CORSMiddleware
+import os
+
+extra_origins = os.getenv("CORS_ORIGINS", "").split(",")
+origins = ["http://localhost:3000", "http://127.0.0.1:3000"] + [o for o in extra_origins if o]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 _broadcasters: dict[str, TheaterBroadcaster] = {}
 

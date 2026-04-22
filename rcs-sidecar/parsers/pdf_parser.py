@@ -25,7 +25,7 @@ async def parse(file_bytes: bytes, filename: str):
 
     if len(raw_text.strip()) < 100 and client:
         b64 = base64.b64encode(file_bytes).decode("utf-8")
-        raw_text = await generate_text(
+        raw_text, _ = await generate_text(
             model=MODEL_PRO,
             contents=[{"inline_data": {"mime_type": "application/pdf", "data": b64}}],
             thinking_level=types.ThinkingLevel.LOW,

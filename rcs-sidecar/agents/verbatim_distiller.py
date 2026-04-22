@@ -37,7 +37,7 @@ async def verbatim_distiller(artifacts: list[SourceArtifact], plan: FieldExtract
         return ExtractionResult(agent_name=AGENT_NAME, extracted_fields={"segments[].verbatims": []}, citations=[], validation_passed=True)
 
     try:
-        result = await generate_structured(MODEL_FLASH, contents, VerbatimExtractionOutput,
+        result, usage = await generate_structured(MODEL_FLASH, contents, VerbatimExtractionOutput,
                                            thinking_level=types.ThinkingLevel.LOW, system_instruction=SYSTEM_PROMPT)
         return ExtractionResult(
             agent_name=AGENT_NAME,

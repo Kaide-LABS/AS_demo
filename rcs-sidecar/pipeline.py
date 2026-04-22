@@ -91,13 +91,14 @@ async def synthesis_agent(
         f"Evidence graph:\n{evidence_json}\n"
     )
 
-    result = await generate_structured(
+    result, usage = await generate_structured(
         model=MODEL_PRO,
         contents=contents,
         response_schema=RadiantPersonaCalibration,
         thinking_level=types.ThinkingLevel.HIGH,
         system_instruction=SYNTHESIS_SYSTEM_PROMPT,
     )
+    await broadcaster.emit('synthesize', 'Synthesis completed', meta=usage)
     result.project_id = project_id
     return result
 
@@ -111,13 +112,14 @@ async def targeted_retry(calibration: RadiantPersonaCalibration, violations: lis
         f"Violations:\n{violation_text}\n\n"
         f"Current calibration:\n{calibration.model_dump_json()}"
     )
-    result = await generate_structured(
+    result, usage = await generate_structured(
         model=MODEL_PRO,
         contents=contents,
         response_schema=RadiantPersonaCalibration,
         thinking_level=types.ThinkingLevel.MEDIUM,
         system_instruction="You are a calibration repair agent. Fix only the specific violations listed.",
     )
+    await broadcaster.emit('validate', 'Targeted retry completed', meta=usage)
     result.project_id = calibration.project_id
     return result
 
@@ -138,6 +140,8 @@ async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile]
     await broadcaster.emit("field_state", f"{field_state.count_unknown()} fields required, 0 populated")
 
     await broadcaster.emit("extract", "Running 6 extraction agents in parallel...")
+    import time
+    t0 = time.time()
     extractions = await asyncio.gather(
         segment_extractor(artifacts, plan, broadcaster),
         verbatim_distiller(artifacts, plan, broadcaster),
@@ -146,6 +150,8 @@ async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile]
         brand_tone_extractor(artifacts, plan, broadcaster),
         campaign_benchmark_extractor(artifacts, plan, broadcaster)
     )
+    extraction_latency = time.time() - t0
+    await broadcaster.emit('extract', f'Extraction complete in {extraction_latency:.1f}s')
     passed = sum(1 for e in extractions if e.validation_passed)
     await broadcaster.emit("extract", f"Continuous validation: {passed}/{len(extractions)} extractors passed")
 
