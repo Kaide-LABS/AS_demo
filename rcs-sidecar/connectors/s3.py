@@ -1,7 +1,11 @@
 from .base import Connector, FileEntry
 import os
-import boto3
 import asyncio
+
+try:
+    import boto3
+except ImportError:
+    boto3 = None  # type: ignore
 
 class S3Connector(Connector):
     def __init__(self, bucket: str, aws_access_key_id: str = None, aws_secret_access_key: str = None):

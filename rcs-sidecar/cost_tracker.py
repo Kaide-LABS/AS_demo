@@ -1,7 +1,11 @@
 import os
 import json
-import redis.asyncio as redis
 from pydantic import BaseModel
+
+try:
+    import redis.asyncio as redis
+except ImportError:
+    redis = None  # type: ignore
 
 PRICING = {
     "gemini-3.1-flash-lite-preview": {"input": 0.25, "output": 1.50},

@@ -3,10 +3,16 @@ import time
 import asyncio
 from typing import AsyncGenerator
 import orjson
-import redis.asyncio as redis
 from schemas import TheaterEvent
 
 REDIS_URL = os.getenv("REDIS_URL")
+
+try:
+    import redis.asyncio as redis
+except ImportError:
+    redis = None  # type: ignore
+    if REDIS_URL:
+        raise ImportError("redis package required when REDIS_URL is set. pip install redis[hiredis]")
 
 class TheaterBroadcaster:
     def __init__(self, job_id: str):

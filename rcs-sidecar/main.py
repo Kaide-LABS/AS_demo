@@ -1,9 +1,11 @@
 import os
 from auth import verify_token
-from fastapi import Depends
-import redis.asyncio as redis
+from fastapi import Depends, FastAPI, UploadFile, File, Form, HTTPException, Header
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Header
+try:
+    import redis.asyncio as aioredis
+except ImportError:
+    aioredis = None  # type: ignore
 from sse_starlette import EventSourceResponse
 from schemas import RadiantPersonaCalibration
 from pipeline import run_calibration
@@ -35,7 +37,7 @@ async def healthz():
     checks = {"status": "ok", "version": "1.1.0"}
     if os.getenv("REDIS_URL"):
         try:
-            r = redis.from_url(os.getenv("REDIS_URL"))
+            r = aioredis.from_url(os.getenv("REDIS_URL"))
             await r.ping()
             checks["redis"] = "connected"
             await r.aclose()
@@ -93,7 +95,7 @@ async def get_costs(job_id: str, claims: dict = Depends(verify_token)):
         raise HTTPException(403, "Admin only")
     if not os.getenv("REDIS_URL"):
         return {"error": "Cost tracking requires REDIS_URL"}
-    r = redis.from_url(os.getenv("REDIS_URL"))
+    r = aioredis.from_url(os.getenv("REDIS_URL"))
     events_raw = await r.lrange(f"costs:{job_id}", 0, -1)
     await r.aclose()
     
@@ -109,7 +111,7 @@ async def gdrive_auth():
 async def gdrive_callback(code: str, project_id: str):
     # Mock token exchange
     if os.getenv("REDIS_URL"):
-        r = redis.from_url(os.getenv("REDIS_URL"))
+        r = aioredis.from_url(os.getenv("REDIS_URL"))
         await r.set(f"gdrive_creds:{project_id}", '{"mock": "creds"}')
         await r.aclose()
     return {"status": "success", "project_id": project_id}

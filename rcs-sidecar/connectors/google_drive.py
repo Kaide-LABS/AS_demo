@@ -1,11 +1,21 @@
 from .base import Connector, FileEntry
 import os
 import json
-import redis.asyncio as redis
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
 import io
+
+try:
+    import redis.asyncio as redis
+except ImportError:
+    redis = None  # type: ignore
+
+try:
+    from google.oauth2.credentials import Credentials
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaIoBaseDownload
+except ImportError:
+    Credentials = None  # type: ignore
+    build = None  # type: ignore
+    MediaIoBaseDownload = None  # type: ignore
 
 REDIS_URL = os.getenv("REDIS_URL")
 
