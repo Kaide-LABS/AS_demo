@@ -1,6 +1,12 @@
 import asyncio
+import json
 from fastapi import UploadFile
-from schemas import RadiantPersonaCalibration, MergedEvidence, RuleViolation
+from google.genai import types
+from schemas import (
+    RadiantPersonaCalibration, MergedEvidence, RuleViolation,
+    PersonaSegment, BehavioralAttribute, Verbatim, SourceCitation,
+    ArtifactType, FieldState,
+)
 from theater import TheaterBroadcaster
 from parsers.detect import detect_and_parse
 from agents.triage import triage_agent
@@ -13,23 +19,107 @@ from agents.demographic_normalizer import demographic_normalizer
 from agents.behavioral_extractor import behavioral_extractor
 from agents.brand_tone_extractor import brand_tone_extractor
 from agents.campaign_benchmark_extractor import campaign_benchmark_extractor
-from agents.client import generate_structured, MODEL_PRO
+from agents.client import generate_structured, generate_text, MODEL_PRO, client
 
-async def synthesis_agent(brief: str, evidence: MergedEvidence, field_state: dict, broadcaster: TheaterBroadcaster) -> RadiantPersonaCalibration:
-    await broadcaster.emit("synthesize", "Synthesizing calibration (deep reasoning)...")
-    # For Phase 1 mocked without real LLM call unless connected:
+SYNTHESIS_SYSTEM_PROMPT = """You are an enterprise audience calibration synthesizer.
+You will receive a merged evidence graph from multiple extraction agents.
+Produce a single RadiantPersonaCalibration JSON object.
+Rules:
+- Create 3-8 named segments. Segment weights MUST sum to 1.0.
+- Every attribute must cite at least one source artifact.
+- Each segment must have at least 5 verbatims.
+- Resolve any contradictions flagged in the evidence.
+- For fields marked as UNKNOWN in the field state, note them in coverage_gaps.
+- Do NOT invent data. If evidence is insufficient, set requires_human_review=true."""
+
+
+def _build_mock_calibration(project_id: str, brief: str, field_state: dict) -> RadiantPersonaCalibration:
+    """Deterministic mock for offline/demo use when no Gemini client is available."""
+    mock_citation = SourceCitation(
+        artifact_id="mock-artifact-001",
+        artifact_type=ArtifactType.SEGMENTATION_STUDY,
+        locator="page 1",
+        excerpt="Mock excerpt for demo purposes.",
+    )
+    mock_attr = BehavioralAttribute(
+        key="media_consumption", value="moderate", confidence=0.4,
+        citations=[mock_citation],
+    )
+    mock_verbatim = lambda i: Verbatim(
+        text=f"This is a representative mock verbatim quote number {i} for demo purposes.",
+        sentiment="neutral", citation=mock_citation,
+    )
+    seg = PersonaSegment(
+        segment_id="demo_segment",
+        label="Demo Segment",
+        description="A placeholder segment generated for offline demo.",
+        weight=1.0,
+        demographic_attributes=[mock_attr],
+        psychographic_attributes=[mock_attr],
+        behavioral_attributes=[mock_attr],
+        information_sources=["mock_source"],
+        verbatims=[mock_verbatim(i) for i in range(5)],
+        overall_confidence=0.4,
+        requires_human_review=True,
+    )
     return RadiantPersonaCalibration(
-        project_id="p1",
+        project_id=project_id,
         target_audience_brief=brief,
-        segments=[],
-        global_provenance=[],
-        coverage_gaps=[],
-        field_state_summary=field_state
+        segments=[seg],
+        global_provenance=[mock_citation],
+        coverage_gaps=["All fields require human review — mock calibration."],
+        field_state_summary=field_state,
     )
 
+
+async def synthesis_agent(
+    project_id: str, brief: str, evidence: MergedEvidence,
+    field_state: dict, broadcaster: TheaterBroadcaster,
+) -> RadiantPersonaCalibration:
+    await broadcaster.emit("synthesize", "Synthesizing calibration (deep reasoning)...")
+    if not client:
+        return _build_mock_calibration(project_id, brief, field_state)
+
+    evidence_json = json.dumps({
+        "evidence_by_field": {k: [n.model_dump() for n in v] for k, v in evidence.evidence_by_field.items()},
+        "contradictions": [c.model_dump() for c in evidence.contradictions],
+    }, default=str)
+
+    contents = (
+        f"Target audience brief: {brief}\n\n"
+        f"Field state: {json.dumps(field_state, default=str)}\n\n"
+        f"Evidence graph:\n{evidence_json}\n"
+    )
+
+    result = await generate_structured(
+        model=MODEL_PRO,
+        contents=contents,
+        response_schema=RadiantPersonaCalibration,
+        thinking_level=types.ThinkingLevel.HIGH,
+        system_instruction=SYNTHESIS_SYSTEM_PROMPT,
+    )
+    result.project_id = project_id
+    return result
+
 async def targeted_retry(calibration: RadiantPersonaCalibration, violations: list[RuleViolation]) -> RadiantPersonaCalibration:
-    # Full regeneration via PRO
-    return calibration
+    if not client:
+        return calibration
+    violation_text = "\n".join(f"- {v.rule_name}: {v.description} (field: {v.field_path})" for v in violations)
+    contents = (
+        f"The following validation rules failed on this calibration JSON. "
+        f"Fix ONLY the failing fields. Do not alter passing fields.\n\n"
+        f"Violations:\n{violation_text}\n\n"
+        f"Current calibration:\n{calibration.model_dump_json()}"
+    )
+    result = await generate_structured(
+        model=MODEL_PRO,
+        contents=contents,
+        response_schema=RadiantPersonaCalibration,
+        thinking_level=types.ThinkingLevel.MEDIUM,
+        system_instruction="You are a calibration repair agent. Fix only the specific violations listed.",
+    )
+    result.project_id = calibration.project_id
+    return result
 
 async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile], broadcaster: TheaterBroadcaster) -> RadiantPersonaCalibration:
     await broadcaster.emit("ingest", f"Parsing {len(uploads)} files...")
@@ -64,7 +154,7 @@ async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile]
     field_state.update(merged)
     await broadcaster.emit("merge", f"Evidence Merger: {merged.deduplication_stats} ... Field-State: {field_state.summary()}")
 
-    draft = await synthesis_agent(brief, merged, field_state.export(), broadcaster)
+    draft = await synthesis_agent(project_id, brief, merged, field_state.export(), broadcaster)
 
     calibration, violations = validate(draft)
     field_state.update_from_validation(calibration, violations)
