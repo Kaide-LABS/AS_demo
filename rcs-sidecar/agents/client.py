@@ -71,3 +71,36 @@ async def generate_text(
     )
     usage = {'input_tokens': response.usage_metadata.prompt_token_count if response.usage_metadata else 0, 'output_tokens': response.usage_metadata.candidates_token_count if response.usage_metadata else 0}
     return response.text, usage
+
+async def generate_structured_cached(
+    model: str,
+    cached_content_name: str,
+    contents: str | list,
+    response_schema: type[BaseModel],
+    thinking_level: types.ThinkingLevel | None = None,
+    system_instruction: str | None = None,
+) -> tuple[BaseModel, dict]:
+    if not client: return response_schema(), {}
+    config = {
+        "cached_content": cached_content_name,
+        "response_mime_type": "application/json",
+        "response_json_schema": response_schema.model_json_schema(),
+    }
+    if thinking_level:
+        config["thinking_config"] = types.ThinkingConfig(thinking_level=thinking_level)
+    if system_instruction:
+        config["system_instruction"] = system_instruction
+        
+    response = client.models.generate_content(
+        model=model,
+        contents=contents,
+        config=types.GenerateContentConfig(**config),
+    )
+    usage = {
+        'input_tokens': response.usage_metadata.prompt_token_count if response.usage_metadata else 0, 
+        'output_tokens': response.usage_metadata.candidates_token_count if response.usage_metadata else 0
+    }
+    try:
+        return response_schema.model_validate_json(response.text), usage
+    except Exception as e:
+        raise ValueError(f"Failed to parse cached generation for model {model}: {e}\nRaw output: {response.text[:2000]}")

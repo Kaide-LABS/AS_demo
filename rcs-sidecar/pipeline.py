@@ -1,4 +1,8 @@
 import asyncio
+import structlog
+from cost_tracker import CostTracker
+logger = structlog.get_logger()
+
 import json
 from fastapi import UploadFile
 from google.genai import types
@@ -123,7 +127,19 @@ async def targeted_retry(calibration: RadiantPersonaCalibration, violations: lis
     result.project_id = calibration.project_id
     return result
 
+
+async def _safe_extract(coro, agent_name, broadcaster):
+    try:
+        return await coro
+    except Exception as e:
+        logger.error("extraction_failed", agent=agent_name, error=str(e))
+        await broadcaster.emit("error", f"{agent_name} failed: {e}")
+        from schemas import ExtractionResult
+        return ExtractionResult(agent_name=agent_name, extracted_fields={}, citations=[], validation_passed=False, validation_errors=[str(e)])
+
 async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile], broadcaster: TheaterBroadcaster) -> RadiantPersonaCalibration:
+    cost_tracker = CostTracker(broadcaster.job_id)
+    logger.bind(trace_id=broadcaster.job_id, project_id=project_id)
     await broadcaster.emit("ingest", f"Parsing {len(uploads)} files...")
     artifacts = await asyncio.gather(*[detect_and_parse(f) for f in uploads])
     await broadcaster.emit("ingest", f"Parsed {len(artifacts)} artifacts")
@@ -143,12 +159,12 @@ async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile]
     import time
     t0 = time.time()
     extractions = await asyncio.gather(
-        segment_extractor(artifacts, plan, broadcaster),
-        verbatim_distiller(artifacts, plan, broadcaster),
-        demographic_normalizer(artifacts, plan, broadcaster),
-        behavioral_extractor(artifacts, plan, broadcaster),
-        brand_tone_extractor(artifacts, plan, broadcaster),
-        campaign_benchmark_extractor(artifacts, plan, broadcaster)
+        _safe_extract(segment_extractor(artifacts, plan, broadcaster), "segment_extractor", broadcaster),
+        _safe_extract(verbatim_distiller(artifacts, plan, broadcaster), "verbatim_distiller", broadcaster),
+        _safe_extract(demographic_normalizer(artifacts, plan, broadcaster), "demographic_normalizer", broadcaster),
+        _safe_extract(behavioral_extractor(artifacts, plan, broadcaster), "behavioral_extractor", broadcaster),
+        _safe_extract(brand_tone_extractor(artifacts, plan, broadcaster), "brand_tone_extractor", broadcaster),
+        _safe_extract(campaign_benchmark_extractor(artifacts, plan, broadcaster), "campaign_benchmark_extractor", broadcaster)
     )
     extraction_latency = time.time() - t0
     await broadcaster.emit('extract', f'Extraction complete in {extraction_latency:.1f}s')
@@ -182,5 +198,6 @@ async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile]
     calibration.field_state_summary = field_state.export()
     await broadcaster.emit("validate", f"Final validation: {len(violations)} rules failed")
     
-    await broadcaster.emit("done", f"RadiantPersonaCalibration ready")
+    total_cost = await cost_tracker.total()
+    await broadcaster.emit("done", f"RadiantPersonaCalibration ready. Total Cost: ${total_cost:.4f}")
     return calibration
