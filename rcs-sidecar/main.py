@@ -21,6 +21,7 @@ async def calibrate(
     project_id: str = Form(...),
     target_audience_brief: str = Form(..., max_length=2000),
     artifacts: list[UploadFile] = File(...),
+    job_id: str = Form(None),
     x_api_key: str | None = Header(None, alias="X-API-Key"),
 ) -> RadiantPersonaCalibration:
     expected_key = os.getenv("RCS_API_KEY")
@@ -36,7 +37,7 @@ async def calibrate(
             raise HTTPException(413, f"File '{f.filename}' exceeds 50MB limit")
         await f.seek(0)
         
-    job_id = str(uuid.uuid4())
+    job_id = job_id or str(uuid.uuid4())
     broadcaster = TheaterBroadcaster(job_id)
     _broadcasters[job_id] = broadcaster
     
