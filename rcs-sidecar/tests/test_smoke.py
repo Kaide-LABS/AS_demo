@@ -9,6 +9,11 @@ FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 
 @pytest.mark.asyncio
 async def test_full_pipeline_offline():
+    try:
+        import magic
+    except (ImportError, OSError):
+        pytest.skip("libmagic not available — run in Docker or CI")
+
     from fastapi import UploadFile
     from io import BytesIO
     from theater import TheaterBroadcaster

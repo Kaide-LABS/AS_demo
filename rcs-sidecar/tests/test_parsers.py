@@ -41,7 +41,7 @@ async def test_txt_parser_falls_back_to_latin1():
 async def test_csv_parser_truncates_large_files():
     from parsers.csv_parser import parse
     lines = ["col_a,col_b"] + [f"val_{i},data_{i}" for i in range(600)]
-    raw, tables, meta = await parse("\\n".join(lines).encode(), "big.csv")
+    raw, tables, meta = await parse("\n".join(lines).encode(), "big.csv")
     assert meta["row_count"] == 600
     assert meta["truncated"] is True
     assert len(tables) == 500
