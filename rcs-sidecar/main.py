@@ -8,6 +8,10 @@ except ImportError:
     aioredis = None  # type: ignore
 from sse_starlette import EventSourceResponse
 from schemas import RadiantPersonaCalibration
+from typing import Literal
+from schemas import InterviewResponse, SectionStatus
+from copilot.interview_engine import InterviewEngine
+
 from pipeline import run_calibration
 from theater import TheaterBroadcaster
 import uuid
@@ -135,6 +139,75 @@ async def gdrive_fetch(project_id: str, file_ids: list[str]):
         try:
             b, n = await conn.fetch_file(fid)
             fetched.append({"filename": n, "size": len(b)})
+        except Exception as e:
+            fetched.append({"file_id": fid, "error": str(e)})
+    return {"fetched": fetched}
+
+@app.post("/v1/copilot/start", response_model=InterviewResponse)
+async def copilot_start(
+    project_id: str = Form(...),
+    brief: str = Form(..., max_length=2000),
+    claims: dict = Depends(verify_token),
+) -> InterviewResponse:
+    engine = InterviewEngine()
+    return await engine.start(project_id, brief)
+
+@app.post("/v1/copilot/{job_id}/respond", response_model=InterviewResponse)
+async def copilot_respond(
+    job_id: str,
+    answer: str = Form(...),
+    files: list[UploadFile] = File(None),
+    claims: dict = Depends(verify_token),
+) -> InterviewResponse:
+    engine = InterviewEngine()
+    return await engine.respond(job_id, answer, files)
+
+@app.get("/v1/copilot/{job_id}/state")
+async def copilot_state(job_id: str, claims: dict = Depends(verify_token)):
+    engine = InterviewEngine()
+    return await engine.get_state(job_id)
+
+@app.get("/v1/calibrate/{job_id}/sections", response_model=list[SectionStatus])
+async def get_sections(job_id: str) -> list[SectionStatus]:
+    # Mock returning sections
+    return [
+        SectionStatus(section_id="seg1", section_name="Segments", status="pending", field_count=5, approved_count=0),
+        SectionStatus(section_id="dem1", section_name="Demographics", status="approved", field_count=3, approved_count=3)
+    ]
+
+@app.post("/v1/calibrate/{job_id}/sections/{section_id}/approve", response_model=SectionStatus)
+async def approve_section(job_id: str, section_id: str) -> SectionStatus:
+    return SectionStatus(section_id=section_id, section_name="Section", status="approved", field_count=5, approved_count=5)
+
+@app.post("/v1/calibrate/{job_id}/sections/{section_id}/reject", response_model=SectionStatus)
+async def reject_section(
+    job_id: str, section_id: str, reason: str = Form(...)
+) -> SectionStatus:
+    return SectionStatus(section_id=section_id, section_name="Section", status="rejected", field_count=5, approved_count=0, rejection_reason=reason)
+
+@app.get("/v1/connectors/s3/files")
+async def s3_files(
+    bucket: str,
+    path: str = "",
+    claims: dict = Depends(verify_token),
+):
+    from connectors.s3 import S3Connector
+    conn = S3Connector(bucket=bucket)
+    return await conn.list_files(path=path)
+
+@app.post("/v1/connectors/s3/fetch")
+async def s3_fetch(
+    bucket: str = Form(...),
+    file_ids: list[str] = Form(...),
+    claims: dict = Depends(verify_token),
+):
+    from connectors.s3 import S3Connector
+    conn = S3Connector(bucket=bucket)
+    fetched = []
+    for fid in file_ids:
+        try:
+            data, name = await conn.fetch_file(fid)
+            fetched.append({"filename": name, "size": len(data)})
         except Exception as e:
             fetched.append({"file_id": fid, "error": str(e)})
     return {"fetched": fetched}

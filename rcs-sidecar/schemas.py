@@ -152,3 +152,28 @@ class RuleViolation(BaseModel):
     field_path: str
     segment_id: Optional[str] = None
     description: str
+
+class InterviewResponse(BaseModel):
+    job_id: str
+    question: Optional[str] = None
+    field_state_summary: dict[str, FieldState]
+    fields_remaining: int
+    fields_total: int
+    calibration: Optional[RadiantPersonaCalibration] = None
+    suggested_upload: Optional[str] = None
+
+class SectionStatus(BaseModel):
+    section_id: str
+    section_name: str
+    status: Literal["pending", "approved", "rejected"]
+    field_count: int
+    approved_count: int
+    rejection_reason: Optional[str] = None
+
+class FieldDetail(BaseModel):
+    field_path: str
+    value: Union[str, float, bool, list[str], dict]
+    confidence: float
+    source_agent: str
+    citations: list[SourceCitation]
+    user_approved: bool = False
