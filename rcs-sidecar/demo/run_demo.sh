@@ -17,7 +17,7 @@ SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 ROOT_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
 
 cd "$ROOT_DIR"
-uvicorn main:app --port 8080 &
+python -m uvicorn main:app --port 8080 &
 BACKEND_PID=$!
 
 cd "$ROOT_DIR/frontend"
