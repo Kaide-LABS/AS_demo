@@ -1,4 +1,5 @@
 import os
+import orjson
 from auth import verify_token
 from fastapi import Depends, FastAPI, UploadFile, File, Form, HTTPException, Header
 
@@ -40,14 +41,18 @@ MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
 async def healthz():
     checks = {"status": "ok", "version": "1.1.0"}
     if os.getenv("REDIS_URL"):
-        try:
-            r = aioredis.from_url(os.getenv("REDIS_URL"))
-            await r.ping()
-            checks["redis"] = "connected"
-            await r.aclose()
-        except Exception:
-            checks["redis"] = "unreachable"
+        if aioredis is None:
+            checks["redis"] = "client_missing"
             checks["status"] = "degraded"
+        else:
+            try:
+                r = aioredis.from_url(os.getenv("REDIS_URL"))
+                await r.ping()
+                checks["redis"] = "connected"
+                await r.aclose()
+            except Exception:
+                checks["redis"] = "unreachable"
+                checks["status"] = "degraded"
     return checks
 
 
@@ -97,8 +102,8 @@ async def stream_theater(job_id: str) -> EventSourceResponse:
 async def get_costs(job_id: str, claims: dict = Depends(verify_token)):
     if claims.get("role") != "admin":
         raise HTTPException(403, "Admin only")
-    if not os.getenv("REDIS_URL"):
-        return {"error": "Cost tracking requires REDIS_URL"}
+    if not os.getenv("REDIS_URL") or aioredis is None:
+        return {"error": "Cost tracking requires REDIS_URL and redis client"}
     r = aioredis.from_url(os.getenv("REDIS_URL"))
     events_raw = await r.lrange(f"costs:{job_id}", 0, -1)
     await r.aclose()
@@ -168,7 +173,7 @@ async def copilot_state(job_id: str, claims: dict = Depends(verify_token)):
     return await engine.get_state(job_id)
 
 @app.get("/v1/calibrate/{job_id}/sections", response_model=list[SectionStatus])
-async def get_sections(job_id: str) -> list[SectionStatus]:
+async def get_sections(job_id: str, claims: dict = Depends(verify_token)) -> list[SectionStatus]:
     # Mock returning sections
     return [
         SectionStatus(section_id="seg1", section_name="Segments", status="pending", field_count=5, approved_count=0),
@@ -176,12 +181,15 @@ async def get_sections(job_id: str) -> list[SectionStatus]:
     ]
 
 @app.post("/v1/calibrate/{job_id}/sections/{section_id}/approve", response_model=SectionStatus)
-async def approve_section(job_id: str, section_id: str) -> SectionStatus:
+async def approve_section(
+    job_id: str, section_id: str, claims: dict = Depends(verify_token)
+) -> SectionStatus:
     return SectionStatus(section_id=section_id, section_name="Section", status="approved", field_count=5, approved_count=5)
 
 @app.post("/v1/calibrate/{job_id}/sections/{section_id}/reject", response_model=SectionStatus)
 async def reject_section(
-    job_id: str, section_id: str, reason: str = Form(...)
+    job_id: str, section_id: str, reason: str = Form(...),
+    claims: dict = Depends(verify_token),
 ) -> SectionStatus:
     return SectionStatus(section_id=section_id, section_name="Section", status="rejected", field_count=5, approved_count=0, rejection_reason=reason)
 
