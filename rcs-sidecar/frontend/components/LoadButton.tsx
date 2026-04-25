@@ -1,9 +1,25 @@
 'use client'
 import { useEffect, useState } from 'react'
 
-export default function LoadButton({ calibration }: { calibration: any }) {
+const fmtDuration = (ms: number | null | undefined) => {
+  if (!ms || ms < 0) return null
+  const totalSeconds = Math.round(ms / 1000)
+  const m = Math.floor(totalSeconds / 60)
+  const s = totalSeconds % 60
+  if (m === 0) return `${s}s`
+  return `${m}m ${s}s`
+}
+
+export default function LoadButton({
+  calibration,
+  durationMs,
+}: {
+  calibration: any
+  durationMs?: number | null
+}) {
   const [toast, setToast] = useState(false)
   const segmentCount = calibration.segments?.length || 0
+  const duration = fmtDuration(durationMs)
 
   useEffect(() => {
     if (!toast) return
@@ -12,24 +28,32 @@ export default function LoadButton({ calibration }: { calibration: any }) {
   }, [toast])
 
   const handleLoad = () => {
-    console.log('Calibration loaded:', calibration)
     setToast(true)
     window.open('https://societies.io/', '_blank', 'noopener,noreferrer')
   }
 
   return (
-    <>
-      <div className="mt-8 border border-warmgray-200 bg-[#F3EFE8] p-5">
-        <button
-          onClick={handleLoad}
-          className="w-full bg-coral px-6 py-5 font-serif text-3xl leading-none text-cream transition hover:opacity-90"
-        >
-          Load into Simulation &rarr;
-        </button>
-        <p className="mt-3 text-center text-xs uppercase tracking-widest text-warmgray-400">
-          Ready with {segmentCount} segment{segmentCount === 1 ? '' : 's'}.
-        </p>
-      </div>
+    <div className="mt-12 max-w-xl">
+      {duration && (
+        <div className="mb-4">
+          <div className="font-serif text-3xl leading-tight text-ink">
+            Calibrated in {duration}
+          </div>
+          <div className="mt-1 text-xs uppercase tracking-widest text-warmgray-400">
+            Manual calibration · typically 3–5 days
+          </div>
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={handleLoad}
+        className="w-full bg-coral px-6 py-5 font-serif text-3xl leading-none text-cream transition hover:opacity-90"
+      >
+        Load into Simulation &rarr;
+      </button>
+      <p className="mt-3 text-center text-xs uppercase tracking-widest text-warmgray-400">
+        Ready with {segmentCount} segment{segmentCount === 1 ? '' : 's'}
+      </p>
 
       {toast && (
         <div
@@ -46,6 +70,6 @@ export default function LoadButton({ calibration }: { calibration: any }) {
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }

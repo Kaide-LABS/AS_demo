@@ -21,6 +21,7 @@ export default function Page() {
   const [events, setEvents] = useState<TheaterEvent[]>([])
   const [calibration, setCalibration] = useState<any>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [durationMs, setDurationMs] = useState<number | null>(null)
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080'
 
   const handleUpload = (file: File) => {
@@ -34,6 +35,8 @@ export default function Page() {
     setIsProcessing(true)
     setEvents([])
     setCalibration(null)
+    setDurationMs(null)
+    const startedAt = Date.now()
 
     const newJobId = crypto.randomUUID()
     setJobId(newJobId)
@@ -53,6 +56,7 @@ export default function Page() {
       const data = JSON.parse(e.data)
       setEvents(prev => [...prev, data])
       if (data.stage === 'done' || data.stage === 'error') {
+        setDurationMs(Date.now() - startedAt)
         eventSource.close()
         setIsProcessing(false)
       }
@@ -65,6 +69,7 @@ export default function Page() {
       })
       const data = await res.json()
       setCalibration(data)
+      setDurationMs((prev) => prev ?? Date.now() - startedAt)
     } catch (err) {
       console.error(err)
       setIsProcessing(false)
@@ -92,16 +97,19 @@ export default function Page() {
               <SampleTemplates onUpload={handleUpload} />
               <FieldStateBar events={events} calibration={calibration} />
               {calibration && <CalibrationResult calibration={calibration} />}
-              {calibration && <LoadButton calibration={calibration} />}
             </div>
 
-            <button
-              type="submit"
-              disabled={files.length === 0 || isProcessing}
-              className="mt-12 w-full max-w-xl rounded-none border border-ink bg-ink px-6 py-5 text-sm uppercase tracking-[0.24em] text-cream transition hover:border-coral hover:bg-coral disabled:cursor-not-allowed disabled:border-warmgray-200 disabled:bg-warmgray-200 disabled:text-warmgray-400"
-            >
-              {isProcessing ? 'Calibrating...' : 'Calibrate Audience'}
-            </button>
+            {calibration ? (
+              <LoadButton calibration={calibration} durationMs={durationMs} />
+            ) : (
+              <button
+                type="submit"
+                disabled={files.length === 0 || isProcessing}
+                className="mt-12 w-full max-w-xl bg-coral px-6 py-5 text-sm uppercase tracking-[0.24em] text-cream transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-warmgray-200 disabled:text-warmgray-400"
+              >
+                {isProcessing ? 'Calibrating…' : 'Calibrate Audience'}
+              </button>
+            )}
           </form>
         </div>
 
