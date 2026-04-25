@@ -105,3 +105,84 @@ Pull this work back in when **any** of:
 Default `RCS_NIA_EXTRACTION_ENABLED=false`. The demo runs the
 truncation path. The Nia capability is the v1.1 narrative for the
 post-pilot conversation.
+
+## Templated Extractors (2026-04-25 evening)
+
+In addition to `segment_extractor` (cb355d0), the Nia retrieval pattern
+is now templated onto:
+
+### `verbatim_distiller` (commit 32e8b1e) — Story 1
+
+`top_k=30` to handle quote scatter. NIA_QUERY tuned for first-person /
+testimonial / participant-statement language.
+
+Diagnostic on fixture set #1:
+```
+7 chunks returned (top_k=30); after filter to assigned artifacts: 1 chunk
+Score range: 0.49 - 0.57  (mean 0.53)
+Top match: earnings transcript chunk_5
+  "EARNINGS CALL TRANSCRIPT - Q4 2025
+   CEO: 'We've seen significant traction with institutional inv..."
+```
+
+E2E result: `4 segs / 20 verbs / 5 demos` in both modes. **Story 1** —
+identical output between Nia and truncation paths. The single chunk
+that survived the `assigned_artifact_ids` filter was the earnings
+transcript, which is the only artifact assigned to this agent in the
+field-state plan. The truncation path was already feeding the same
+content. No regression, no upside on this fixture.
+
+### `demographic_normalizer` (commit 6ceab00) — Story 2
+
+`top_k=20`. NIA_QUERY tuned for tabular demographic content.
+
+Diagnostic on fixture set #1:
+```
+7 chunks returned (top_k=20); after filter to assigned artifacts: 1 chunk
+Score range: 0.46 - 0.61  (mean 0.52)
+Top match (post-filter): CRM holders chunk_6
+  "holder_name,holder_type,shares_held,pct_outstanding,
+   last_engagement,engagement_channel
+   BlackRock..."
+```
+
+E2E result:
+```
+baseline (truncation): 4 segs / 20 verbs / 6 demos in 60.9s
+nia path:              4 segs / 20 verbs / 8 demos in 254.1s
+```
+
+**Story 2 signal.** Nia surfaced **two additional demographic fields**
+that the truncation path missed — chunk_6 of the CRM file is past the
+50KB truncation boundary, and Gemini extracted demographic richness
+from those rows that the baseline never saw.
+
+This is the first templating that actually beat truncation on output
+quality. It's also the first one that materially impacted latency:
+60s → 254s (4×). Likely cause: three concurrent Nia `/v2/search`
+calls per pipeline run (segment + verbatim + demographic) plus the
+indexing call, hitting Nia's queue.
+
+### Remaining 3 extractors (deferred)
+
+- `behavioral_extractor` — content overlaps heavily with segments;
+  expected Story 1.
+- `brand_tone_extractor` — content patterns are diffuse and repeated
+  throughout docs; expected Story 1.
+- `campaign_benchmark_extractor` — usually concentrated in summary
+  sections that fit truncation; expected Story 1.
+
+**Sunday-morning checkpoint decision:** the demographic_normalizer
+Story-2 win argues *for* templating the remaining 3 since the
+infrastructure works and adds value when content is genuinely past
+the 50KB cliff. The 4× latency hit argues *against* — adding 3 more
+concurrent Nia calls could push p95 past the 5-minute SLA.
+
+If templating Sunday morning, batch all 3 calls behind a single
+indexing wait, and consider serializing the Nia queries to control
+concurrency (asyncio.gather → asyncio.gather with semaphore).
+
+Trigger condition for re-engagement (unchanged): prospect uploads a
+corpus exceeding 50KB per artifact; AS pilot feedback indicates
+truncation-induced hallucinations; new agents are added that need
+focused retrieval.
