@@ -175,7 +175,7 @@ async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile]
     t0 = time.time()
     extractions = await asyncio.gather(
         _safe_extract(segment_extractor(artifacts, plan, broadcaster, engagement_source_id), "segment_extractor", broadcaster),
-        _safe_extract(verbatim_distiller(artifacts, plan, broadcaster), "verbatim_distiller", broadcaster),
+        _safe_extract(verbatim_distiller(artifacts, plan, broadcaster, engagement_source_id), "verbatim_distiller", broadcaster),
         _safe_extract(demographic_normalizer(artifacts, plan, broadcaster), "demographic_normalizer", broadcaster),
         _safe_extract(behavioral_extractor(artifacts, plan, broadcaster), "behavioral_extractor", broadcaster),
         _safe_extract(brand_tone_extractor(artifacts, plan, broadcaster), "brand_tone_extractor", broadcaster),

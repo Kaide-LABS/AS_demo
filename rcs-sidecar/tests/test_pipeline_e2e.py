@@ -70,22 +70,35 @@ async def test_pipeline_with_and_without_nia_extraction():
     except (ImportError, OSError):
         pytest.skip("libmagic not available")
 
+    def _counts(result):
+        segs = getattr(result, "segments", None) or getattr(
+            getattr(result, "calibration", None), "segments", []
+        ) or []
+        verbs = sum(len(getattr(s, "verbatims", []) or []) for s in segs)
+        demos = sum(len(getattr(s, "demographic_attributes", []) or []) for s in segs)
+        return segs, verbs, demos
+
     print("\n>>> baseline run (truncation path)")
     base, base_t = await _run(enabled=False)
-    base_segs = getattr(base, "segments", None) or getattr(getattr(base, "calibration", None), "segments", [])
-    print(f"  elapsed={base_t:.1f}s  segments={len(base_segs)}")
+    base_segs, base_verbs, base_demos = _counts(base)
+    print(f"  elapsed={base_t:.1f}s  segments={len(base_segs)}  verbatims={base_verbs}  demographics={base_demos}")
 
     print("\n>>> nia run (extraction path)")
     nia, nia_t = await _run(enabled=True)
-    nia_segs = getattr(nia, "segments", None) or getattr(getattr(nia, "calibration", None), "segments", [])
-    print(f"  elapsed={nia_t:.1f}s  segments={len(nia_segs)}")
+    nia_segs, nia_verbs, nia_demos = _counts(nia)
+    print(f"  elapsed={nia_t:.1f}s  segments={len(nia_segs)}  verbatims={nia_verbs}  demographics={nia_demos}")
 
-    print(f"\nbaseline: {len(base_segs)} segments in {base_t:.1f}s")
-    print(f"nia:      {len(nia_segs)} segments in {nia_t:.1f}s")
+    print(f"\nbaseline: {len(base_segs)} segs / {base_verbs} verbs / {base_demos} demos in {base_t:.1f}s")
+    print(f"nia:      {len(nia_segs)} segs / {nia_verbs} verbs / {nia_demos} demos in {nia_t:.1f}s")
 
     assert len(nia_segs) >= 1, "nia path produced no segments"
     assert nia_t < 300, f"nia path too slow: {nia_t:.1f}s"
-    # Soft expectation: nia path produces at least as many segments as baseline
     assert len(nia_segs) >= max(1, len(base_segs) - 1), (
         f"nia path regressed segment count: {len(nia_segs)} vs baseline {len(base_segs)}"
+    )
+    assert nia_verbs >= base_verbs, (
+        f"nia path regressed verbatim count: {nia_verbs} vs baseline {base_verbs}"
+    )
+    assert nia_demos >= base_demos, (
+        f"nia path regressed demographic count: {nia_demos} vs baseline {base_demos}"
     )
