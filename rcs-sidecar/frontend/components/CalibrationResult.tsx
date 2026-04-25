@@ -32,7 +32,9 @@ const fmtAttr = (a: Attr) => {
 
 export default function CalibrationResult({ calibration }: { calibration: Calibration }) {
   const [open, setOpen] = useState<string | null>(null)
-  const segments = calibration.segments || []
+  const segments = [...(calibration.segments || [])].sort(
+    (a, b) => (b.weight ?? 0) - (a.weight ?? 0),
+  )
   const constraints = calibration.brand_constraints || []
   const gaps = calibration.coverage_gaps || []
 
@@ -54,6 +56,11 @@ export default function CalibrationResult({ calibration }: { calibration: Calibr
           const isOpen = open === id
           return (
             <div key={id} className="border border-warmgray-200 bg-cream">
+              <div
+                className="h-1 bg-coral"
+                style={{ width: `${Math.max(2, Math.round((s.weight ?? 0) * 100))}%` }}
+                aria-hidden
+              />
               <button
                 type="button"
                 onClick={() => setOpen(isOpen ? null : id)}
@@ -126,18 +133,46 @@ export default function CalibrationResult({ calibration }: { calibration: Calibr
         </div>
       )}
 
-      {gaps.length > 0 && (
-        <div>
-          <div className="mb-2 text-xs uppercase tracking-widest text-warmgray-400">
-            Coverage gaps ({gaps.length})
-          </div>
-          <ul className="ml-4 list-disc space-y-1 text-sm text-warmgray-400">
-            {gaps.slice(0, 6).map((g, i) => (
-              <li key={i}>{g}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {gaps.length > 0 && <FlaggedForReview gaps={gaps} />}
+    </div>
+  )
+}
+
+function categorize(g: string): string {
+  const s = g.toLowerCase()
+  if (s.includes('is not a canonical')) return 'VOCABULARY'
+  if (s.includes('ambiguous between')) return 'AMBIGUITY'
+  if (s.includes('confidence') && s.includes('exceeds bound')) return 'EVIDENCE'
+  if (s.includes('unknown')) return 'MISSING DATA'
+  return 'OTHER'
+}
+
+function FlaggedForReview({ gaps }: { gaps: string[] }) {
+  return (
+    <div>
+      <div className="mb-1 text-xs uppercase tracking-widest text-warmgray-400">
+        Flagged for Human Review ({gaps.length})
+      </div>
+      <p className="mb-4 max-w-2xl text-sm leading-relaxed text-warmgray-400">
+        This calibration declined to assert claims it could not verify. Each item below was caught by the deterministic validation layer.
+      </p>
+      <ul className="space-y-1.5">
+        {gaps.map((g, i) => {
+          const cat = categorize(g)
+          return (
+            <li
+              key={i}
+              className="flex items-baseline gap-3 border-l-2 border-coral/40 px-3 py-2 text-sm"
+              style={{ backgroundColor: 'rgba(232, 93, 61, 0.06)' }}
+            >
+              <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-coral">
+                {cat}
+              </span>
+              <span className="text-ink">{g}</span>
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }
