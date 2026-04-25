@@ -3,22 +3,56 @@ import { TheaterEvent } from '../app/page'
 
 const UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi
 
+// Only show messages whose first word is in this allowlist. Drops dev-diagnostic
+// dict-dumps like "Evidence Merger: {'total_nodes': ...}" from the user-facing log.
+const ALLOWED_PREFIXES = [
+  'Parsing',
+  'Parsed',
+  'Classifying',
+  'Classified',
+  'Triage',
+  'Extracting',
+  'Normalizing',
+  'Distilling',
+  'Extraction',
+  'Continuous',
+  'Merging',
+  'Synthesizing',
+  'Synthesis',
+  'Final',
+  'Targeted',
+  'Validation',
+  'RadiantPersonaCalibration',
+  'Nia',
+]
+
+const isUserFacing = (msg: string): boolean => {
+  const trimmed = msg.trimStart()
+  if (/[{}]/.test(trimmed)) return false
+  return ALLOWED_PREFIXES.some((p) => trimmed.startsWith(p))
+}
+
 export default function TheaterPanel({ events }: { events: TheaterEvent[] }) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
+
+  const visibleEvents = useMemo(
+    () => events.filter((e) => e.stage === 'done' || e.stage === 'error' || isUserFacing(e.message)),
+    [events],
+  )
 
   // Stable UUID -> ordinal mapping, so the same artifact gets the same #N
   // every time it appears across events.
   const ordinalByUuid = useMemo(() => {
     const map = new Map<string, number>()
-    for (const e of events) {
+    for (const e of visibleEvents) {
       const uuids = e.message.match(UUID_RE) || []
       for (const u of uuids) {
         if (!map.has(u)) map.set(u, map.size + 1)
       }
     }
     return map
-  }, [events])
+  }, [visibleEvents])
 
   const cleanMessage = (msg: string) =>
     msg.replace(UUID_RE, (u) => `artifact #${ordinalByUuid.get(u) ?? '?'}`)
@@ -27,7 +61,7 @@ export default function TheaterPanel({ events }: { events: TheaterEvent[] }) {
     <div className="flex h-full flex-col border border-warmgray-200 bg-[#F3EFE8] p-6 text-sm text-ink lg:p-8">
       <div className="mb-6 text-xs uppercase tracking-widest text-warmgray-400">PIPELINE ACTIVITY</div>
       <div className="overflow-y-auto text-sm">
-        {events.map((e, i) => {
+        {visibleEvents.map((e, i) => {
           const isDone = e.stage === 'done'
           const isError = e.stage === 'error'
           return (
