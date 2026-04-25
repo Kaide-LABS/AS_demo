@@ -14,6 +14,7 @@ export default function LoadButton({ calibration }: { calibration: any }) {
   const handleLoad = () => {
     console.log('Calibration loaded:', calibration)
     setToast(true)
+    window.open('https://societies.io/', '_blank', 'noopener,noreferrer')
   }
 
   return (

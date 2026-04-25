@@ -2,6 +2,7 @@ import os
 import json
 import asyncio
 import structlog
+from contextvars import ContextVar
 from google import genai
 from google.genai import types
 from google.genai.errors import ClientError
@@ -9,6 +10,27 @@ from pydantic import BaseModel
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 logger = structlog.get_logger()
+
+# Per-request cost tracker. Pipeline sets this; agents auto-record.
+_active_cost_tracker: ContextVar[object | None] = ContextVar("active_cost_tracker", default=None)
+
+
+def set_active_cost_tracker(tracker) -> None:
+    _active_cost_tracker.set(tracker)
+
+
+async def _record_usage(model: str, usage: dict) -> None:
+    tracker = _active_cost_tracker.get()
+    if tracker is None or not usage:
+        return
+    try:
+        await tracker.record(
+            model=model,
+            input_tokens=int(usage.get("input_tokens", 0) or 0),
+            output_tokens=int(usage.get("output_tokens", 0) or 0),
+        )
+    except Exception as e:
+        logger.warning("cost_record_failed", error=str(e))
 
 MODEL_FLASH_LITE = "gemini-3.1-flash-lite-preview"
 MODEL_FLASH = "gemini-3-flash-preview"
@@ -114,8 +136,11 @@ def _call_generate_content_sync(model: str, contents: str | list, config: types.
 
 
 async def _call_generate_content(model: str, contents: str | list, config: types.GenerateContentConfig | None):
-    """Run the sync Gemini call in a thread so it doesn't block the event loop."""
-    return await asyncio.to_thread(_call_generate_content_sync, model, contents, config)
+    """Run the sync Gemini call in a thread so it doesn't block the event loop. 90s hard cap."""
+    return await asyncio.wait_for(
+        asyncio.to_thread(_call_generate_content_sync, model, contents, config),
+        timeout=90,
+    )
 
 @retry(
     stop=stop_after_attempt(3),
@@ -159,6 +184,7 @@ async def generate_structured(
     )
     try:
         usage = {'input_tokens': response.usage_metadata.prompt_token_count if response.usage_metadata else 0, 'output_tokens': response.usage_metadata.candidates_token_count if response.usage_metadata else 0}
+        await _record_usage(model, usage)
         cleaned = _extract_json_object(response.text)
         return response_schema.model_validate_json(cleaned), usage, response.text
     except Exception as e:
@@ -192,6 +218,7 @@ async def generate_text(
         config=types.GenerateContentConfig(**config) if config else None,
     )
     usage = {'input_tokens': response.usage_metadata.prompt_token_count if response.usage_metadata else 0, 'output_tokens': response.usage_metadata.candidates_token_count if response.usage_metadata else 0}
+    await _record_usage(model, usage)
     return response.text, usage
 
 async def generate_structured_cached(
@@ -226,6 +253,7 @@ async def generate_structured_cached(
         'output_tokens': response.usage_metadata.candidates_token_count if response.usage_metadata else 0
     }
     try:
+        await _record_usage(model, usage)
         return response_schema.model_validate_json(_extract_json_object(response.text)), usage
     except Exception as e:
         raise ValueError(f"Failed to parse cached generation for model {model}: {e}\nRaw output: {response.text[:2000]}")

@@ -6,6 +6,7 @@ import SampleTemplates from '../components/SampleTemplates'
 import TheaterPanel from '../components/TheaterPanel'
 import FieldStateBar from '../components/FieldStateBar'
 import LoadButton from '../components/LoadButton'
+import CalibrationResult from '../components/CalibrationResult'
 
 export interface TheaterEvent {
   ts_ms: number
@@ -90,6 +91,7 @@ export default function Page() {
               <DropZone files={files} setFiles={setFiles} />
               <SampleTemplates onUpload={handleUpload} />
               <FieldStateBar events={events} />
+              {calibration && <CalibrationResult calibration={calibration} />}
               {calibration && <LoadButton calibration={calibration} />}
             </div>
 
