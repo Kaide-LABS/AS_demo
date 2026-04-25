@@ -21,7 +21,7 @@ export default function Page() {
   const [events, setEvents] = useState<TheaterEvent[]>([])
   const [calibration, setCalibration] = useState<any>(null)
   const [isProcessing, setIsProcessing] = useState(false)
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080'
 
   const handleUpload = (file: File) => {
     setFiles(prevFiles => [...prevFiles, file].slice(0, 25))
@@ -90,7 +90,7 @@ export default function Page() {
               <div className="text-xs uppercase tracking-widest text-warmgray-400">STEP 2 — CALIBRATE AUDIENCE</div>
               <DropZone files={files} setFiles={setFiles} />
               <SampleTemplates onUpload={handleUpload} />
-              <FieldStateBar events={events} />
+              <FieldStateBar events={events} calibration={calibration} />
               {calibration && <CalibrationResult calibration={calibration} />}
               {calibration && <LoadButton calibration={calibration} />}
             </div>
