@@ -1,4 +1,7 @@
+import json
+import os
 import structlog
+from pathlib import Path
 from typing import Literal, Optional
 from pydantic import BaseModel, Field
 from schemas import ExtractionResult, FieldExtractionPlan, SourceArtifact, SourceCitation
@@ -58,6 +61,34 @@ async def _build_nia_contents(
     chunks = await nia_corpus.query_engagement_corpus(
         engagement_source_id, NIA_QUERY, top_k=20
     )
+
+    if os.getenv("RCS_CHUNK_DIAGNOSTIC") == "true":
+        diag_path = Path(os.getenv(
+            "RCS_CHUNK_DIAGNOSTIC_PATH",
+            str(Path.home() / "rcs_chunks.json"),
+        ))
+        diag = {
+            "agent": AGENT_NAME,
+            "query": NIA_QUERY,
+            "engagement_source_id": engagement_source_id,
+            "assigned_artifact_ids": sorted(assigned_artifact_ids),
+            "all_chunks": [
+                {
+                    "artifact_id": c["artifact_id"],
+                    "score": c["score"],
+                    "locator": c.get("locator", ""),
+                    "content_preview": c["content"][:500],
+                    "content_length": len(c["content"]),
+                }
+                for c in chunks
+            ],
+        }
+        try:
+            diag_path.parent.mkdir(parents=True, exist_ok=True)
+            diag_path.write_text(json.dumps(diag, indent=2), encoding="utf-8")
+        except Exception:
+            pass
+
     if not chunks:
         return None
     chunks = [c for c in chunks if c["artifact_id"] in assigned_artifact_ids]
