@@ -147,18 +147,69 @@ function categorize(g: string): string {
   return 'OTHER'
 }
 
+function signatureFor(category: string, gap: string): string {
+  if (category === 'EVIDENCE') {
+    // Normalize the specific numbers so 0.85/0.9/0.95 + 0.42 + N sources collapse together.
+    return gap
+      .replace(/\b\d+(?:\.\d+)?\b/g, '<X>')
+      .replace(/\bsources?\b/gi, '<N> sources')
+      .toLowerCase()
+  }
+  if (category === 'VOCABULARY' || category === 'AMBIGUITY') {
+    // Keep the canonical key being flagged as the signature so different keys stay separate.
+    const m = gap.match(/['"]([^'"]+)['"]/)
+    return `${category}:${m ? m[1] : gap.toLowerCase()}`
+  }
+  // MISSING DATA / OTHER — no grouping
+  return `${category}:${gap}`
+}
+
+function subtitleFor(category: string): string | null {
+  if (category === 'EVIDENCE') {
+    return 'Synthesis confidence exceeds the maximum supported by single-source attributes. Either provide additional corroborating sources or downgrade confidence to ≤0.42.'
+  }
+  return null
+}
+
+function summaryFor(category: string, sample: string, count: number): string {
+  if (category === 'EVIDENCE' && count > 1) {
+    return `${count} attributes claim confidence above their evidence bound (single-source ceiling 0.42).`
+  }
+  return sample
+}
+
+type GapGroup = { category: string; sample: string; count: number; signature: string }
+
+function groupGaps(gaps: string[]): GapGroup[] {
+  const order: string[] = []
+  const map = new Map<string, GapGroup>()
+  for (const g of gaps) {
+    const cat = categorize(g)
+    const sig = signatureFor(cat, g)
+    if (map.has(sig)) {
+      map.get(sig)!.count += 1
+    } else {
+      map.set(sig, { category: cat, sample: g, count: 1, signature: sig })
+      order.push(sig)
+    }
+  }
+  return order.map((s) => map.get(s)!)
+}
+
 function FlaggedForReview({ gaps }: { gaps: string[] }) {
+  const groups = groupGaps(gaps)
   return (
-    <div>
-      <div className="mb-1 text-xs uppercase tracking-widest text-warmgray-400">
+    <div className="mt-12 border-t border-warmgray-200 pt-8">
+      <div className="mb-1 text-xs font-semibold uppercase tracking-widest text-ink">
         Flagged for Human Review ({gaps.length})
       </div>
-      <p className="mb-4 max-w-2xl text-sm leading-relaxed text-warmgray-400">
+      <p className="mb-5 max-w-2xl text-sm leading-relaxed text-warmgray-400">
         This calibration declined to assert claims it could not verify. Each item below was caught by the deterministic validation layer.
       </p>
       <ul className="space-y-1.5">
-        {gaps.map((g, i) => {
-          const cat = categorize(g)
+        {groups.map((g, i) => {
+          const subtitle = g.count > 1 ? subtitleFor(g.category) : null
+          const text = summaryFor(g.category, g.sample, g.count)
           return (
             <li
               key={i}
@@ -166,9 +217,19 @@ function FlaggedForReview({ gaps }: { gaps: string[] }) {
               style={{ backgroundColor: 'rgba(232, 93, 61, 0.06)' }}
             >
               <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-coral">
-                {cat}
+                {g.category}
               </span>
-              <span className="text-ink">{g}</span>
+              {g.count > 1 && (
+                <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-warmgray-400">
+                  ×{g.count}
+                </span>
+              )}
+              <div className="text-ink">
+                <div>{text}</div>
+                {subtitle && (
+                  <div className="mt-1 text-xs leading-relaxed text-warmgray-400">{subtitle}</div>
+                )}
+              </div>
             </li>
           )
         })}
