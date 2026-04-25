@@ -1,6 +1,13 @@
 import os
-import orjson
 from pathlib import Path
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parent / ".env")
+except ImportError:
+    pass
+
+import orjson
 import uvicorn
 from auth import verify_token
 from fastapi import Depends, FastAPI, UploadFile, File, Form, HTTPException, Header

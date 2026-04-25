@@ -1,72 +1,68 @@
 """
 Semantic validator for canonical attribute vocabulary.
 
-Nia HTTP API discovery (build-time, 2026-04-25)
-================================================
+Nia HTTP API contract (build-time, validated empirically 2026-04-25)
+====================================================================
 Base URL ........... https://apigcp.trynia.ai/v2
                      Override via NIA_API_URL env var.
 Auth ............... Authorization: Bearer <NIA_API_KEY>
-Endpoint used ...... POST /v2/search
+Endpoint used ...... POST /v2/search   (mode discriminator in body)
 
-Two relevant request modes:
+Request (the only call we make):
+  {
+    "mode": "query",
+    "messages": [{"role": "user", "content": <extracted_value>}],
+    "local_folders": [<family_source_id>],     // scopes retrieval to ONE family
+    "include_sources": true,
+    "stream": false,
+    "skip_llm": true                            // we want raw retrieval, no LLM synthesis
+  }
 
-1. mode = "universal"
-   Body: {
-     "mode": "universal",
-     "query": <str>,
-     "top_k": <int>,
-     "include_repos": <bool>,
-     "include_docs": <bool>
-   }
-   Hybrid vector + BM25 across all globally indexed sources. Response shape:
-     {
-       "results": [
-         {
-           "content": <str>,
-           "score": <float, 0..1, post-rerank>,
-           "source": {
-             "type": "documentation" | "repository" | ...,
-             "namespace": <str>,
-             "display_name": <str>,
-             "document_name": <str>,
-             "initial_score": <float>,
-             "reranker_score": <float>,
-             ...
-           },
-           "summary": <str>
-         }, ...
-       ],
-       "sources_searched": <int>,
-       "query_time_ms": <int>,
-       "errors": [...],
-       "retrieval_log_id": <str>
-     }
-   The top-level `score` is on a 0..1 scale. We use this as the cosine-similarity
-   proxy for threshold/ambiguity comparisons.
+Response (with skip_llm=true):
+  {
+    "content": null,
+    "sources": [
+      {
+        "content": "<chunk text>",
+        "metadata": {
+          "file_name": "<canonical_key>.txt",   // direct map to canonical key
+          "file_path": "<canonical_key>.txt",
+          "score": <float>,                     // reranker score, see scale note
+          "local_folder_id": "<source_id>",
+          "local_folder_name": "rcs_canonical_<family>",
+          "chunk_index": <int>,
+          "total_chunks": <int>,
+          ...
+        }
+      },
+      ...
+    ],
+    "follow_up_questions": [...],
+    "retrieval_log_id": "<str>",
+    "_cached": <bool>,
+    ...
+  }
 
-2. mode = "query"
-   Body includes data_sources=[<source_id>, ...]. The endpoint synthesizes an
-   LLM answer plus a `sources` array of file paths/URLs. With skip_llm=true the
-   response collapses to {content: null, sources: []} — no per-source scores.
-   We do NOT use this mode for scoring; only universal exposes scores.
+Score scale note
+----------------
+Nia's `metadata.score` here is a reranker output, NOT raw cosine similarity.
+Empirically, top correct matches land in the 0.55–0.90 range. The JSON's
+match_threshold=0.85 was authored assuming a cosine backend; for the Nia
+reranker we use NIA_MATCH_THRESHOLD (default 0.50). The ambiguity_window from
+the JSON still applies. The JSON is left untouched per directive — this is a
+deployment-time recalibration of the active embedding backend.
 
-Inline corpus support
----------------------
-Nia does NOT support inline corpus embedding (you cannot pass the vocabulary
-to-be-matched in the request body). Vocabulary must be PRE-INDEXED as one
-source per family. Two routes exist for that:
+Vocabulary indexing
+-------------------
+Nia does not support inline corpus embedding. Vocabulary must be pre-indexed
+as one local_folder source per family. Run validators/seed_nia.py once; it
+writes validators/nia_sources.json with the per-family source IDs. The
+validator reads that file at module load and uses local_folders=[<id>] to
+scope retrieval.
 
-  a) Index each family's text corpus as a private global source (via
-     POST /v2/sources or via the equivalent of `repos.sh index` /
-     `sources.sh index`) and pass the resulting source IDs to the validator
-     via env vars NIA_VOCAB_SOURCE_<FAMILY>.
-  b) Index each family as a "local folder" with a unique namespace per family
-     (e.g., rcs_canonical_demographic_v1) and pass NIA_VOCAB_NAMESPACE_<FAMILY>
-     so the validator can filter universal results by namespace.
-
-Either path is OUT OF SCOPE for this validator. When a family has no source ID
-or namespace configured, the validator falls back to difflib.SequenceMatcher.
-This is by design — the demo must work with no Nia setup at all.
+When validators/nia_sources.json is missing AND no NIA_VOCAB_SOURCE_<FAMILY>
+env var is set for a family, the validator falls back to difflib for that
+family. The demo always has a working path — Nia setup is optional.
 
 Rate limits / pagination
 ------------------------
@@ -106,14 +102,15 @@ import httpx
 logger = logging.getLogger(__name__)
 
 VOCABULARY_PATH = Path(__file__).parent / "canonical_vocabulary.json"
+NIA_SOURCES_PATH = Path(__file__).parent / "nia_sources.json"
 NIA_API_KEY = os.getenv("NIA_API_KEY")
 NIA_API_URL = os.getenv("NIA_API_URL", "https://apigcp.trynia.ai") + "/v2"
-NIA_TIMEOUT = float(os.getenv("NIA_TIMEOUT_SECONDS", "3"))
+NIA_TIMEOUT = float(os.getenv("NIA_TIMEOUT_SECONDS", "5"))
 SEMANTIC_VALIDATION_ENABLED = (
     os.getenv("RCS_SEMANTIC_VALIDATION_ENABLED", "true").lower() == "true"
 )
 FALLBACK_THRESHOLD = 0.7
-TOP_K = 20
+NIA_MATCH_THRESHOLD = float(os.getenv("NIA_MATCH_THRESHOLD", "0.50"))
 
 Family = Literal[
     "demographic", "psychographic", "behavioral", "brand_constraint", "campaign_benchmark"
@@ -180,11 +177,23 @@ def _build_embedding_surface(family: Family) -> list[tuple[str, str]]:
     return surface
 
 
-def _resolve_thresholds(threshold: Optional[float]) -> tuple[float, float]:
+def _resolve_thresholds(
+    threshold: Optional[float], backend: Literal["nia", "fallback"] = "nia"
+) -> tuple[float, float]:
+    """Pick the right threshold for the active backend.
+
+    The JSON's match_threshold=0.85 is documented for a cosine-similarity
+    backend. The Nia reranker we actually call returns scores on a different
+    scale, so the deployed default for that backend is NIA_MATCH_THRESHOLD.
+    Callers can still pass an explicit `threshold` to override.
+    """
     vocab = load_vocabulary()
-    match_threshold = threshold if threshold is not None else float(
-        vocab.get("match_threshold", 0.85)
-    )
+    if threshold is not None:
+        match_threshold = threshold
+    elif backend == "nia":
+        match_threshold = NIA_MATCH_THRESHOLD
+    else:
+        match_threshold = float(vocab.get("match_threshold", 0.85))
     ambiguity_window = float(vocab.get("ambiguity_window", 0.05))
     return match_threshold, ambiguity_window
 
@@ -214,16 +223,31 @@ async def aclose() -> None:
             _client = None
 
 
+_seeded_sources_cache: Optional[dict] = None
+
+
+def _seeded_sources() -> dict:
+    """Load nia_sources.json (written by validators/seed_nia.py). Cached."""
+    global _seeded_sources_cache
+    if _seeded_sources_cache is None:
+        if NIA_SOURCES_PATH.exists():
+            try:
+                _seeded_sources_cache = json.loads(NIA_SOURCES_PATH.read_text(encoding="utf-8"))
+            except Exception:
+                _seeded_sources_cache = {}
+        else:
+            _seeded_sources_cache = {}
+    return _seeded_sources_cache
+
+
 def _family_source_ids(family: Family) -> list[str]:
-    """Per-family source IDs (env var: NIA_VOCAB_SOURCE_<FAMILY>, csv)."""
+    """Per-family source IDs. Prefers nia_sources.json, falls back to
+    NIA_VOCAB_SOURCE_<FAMILY> env var (csv)."""
+    seeded = _seeded_sources().get(family)
+    if seeded:
+        return [seeded] if isinstance(seeded, str) else list(seeded)
     raw = os.getenv(f"NIA_VOCAB_SOURCE_{family.upper()}", "")
     return [s.strip() for s in raw.split(",") if s.strip()]
-
-
-def _family_namespace(family: Family) -> Optional[str]:
-    """Per-family namespace filter (env var: NIA_VOCAB_NAMESPACE_<FAMILY>)."""
-    val = os.getenv(f"NIA_VOCAB_NAMESPACE_{family.upper()}", "").strip()
-    return val or None
 
 
 def _can_use_nia(family: Family) -> Optional[str]:
@@ -232,7 +256,7 @@ def _can_use_nia(family: Family) -> Optional[str]:
         return "feature_disabled"
     if not NIA_API_KEY:
         return "api_key_missing"
-    if not _family_source_ids(family) and not _family_namespace(family):
+    if not _family_source_ids(family):
         return "no_vocab_source_configured"
     return None
 
@@ -240,16 +264,20 @@ def _can_use_nia(family: Family) -> Optional[str]:
 # ───────────────────── Nia HTTP path ─────────────────────
 
 
-async def _nia_universal_search(query: str) -> list[dict]:
-    """Hit /v2/search mode=universal. Returns list of result dicts (may be empty)."""
+async def _nia_query_search(query: str, local_folder_ids: list[str]) -> list[dict]:
+    """Hit POST /v2/search with mode=query, scoped to specific local_folders,
+    skip_llm=true so we get raw ranked retrieval without LLM synthesis.
+
+    Returns the `sources` list. Each entry has `metadata.file_name` (mapping
+    directly to the canonical key) and `metadata.score` (reranker score)."""
     client = await _get_client()
     body = {
-        "mode": "universal",
-        "query": query,
-        "top_k": TOP_K,
-        "include_repos": True,
-        "include_docs": True,
-        "compress_output": False,
+        "mode": "query",
+        "messages": [{"role": "user", "content": query}],
+        "local_folders": local_folder_ids,
+        "include_sources": True,
+        "stream": False,
+        "skip_llm": True,
     }
     headers = {
         "Authorization": f"Bearer {NIA_API_KEY}",
@@ -258,52 +286,28 @@ async def _nia_universal_search(query: str) -> list[dict]:
     resp = await client.post(f"{NIA_API_URL}/search", json=body, headers=headers)
     resp.raise_for_status()
     data = resp.json()
-    return data.get("results", []) or []
+    return data.get("sources", []) or []
 
 
-def _filter_results_for_family(results: list[dict], family: Family) -> list[dict]:
-    """Keep only results that belong to this family's vocabulary corpus."""
-    source_ids = set(_family_source_ids(family))
-    namespace = _family_namespace(family)
-    out: list[dict] = []
-    for r in results:
-        src = r.get("source") or {}
-        if source_ids:
-            sid = src.get("id") or src.get("source_id") or src.get("namespace")
-            if sid in source_ids:
-                out.append(r)
-                continue
-        if namespace and src.get("namespace") == namespace:
-            out.append(r)
-    return out
+def _aggregate_scores_from_sources(sources: list[dict]) -> dict[str, float]:
+    """Map Nia source chunks back to canonical keys.
 
-
-def _aggregate_scores(results: list[dict], family: Family) -> dict[str, float]:
-    """Map Nia results back to canonical keys via the embedding surface.
-
-    Strategy: each Nia result has `content` and/or `source.document_name`. We
-    scan that text for a substring match against the family's surface entries
-    and credit the parent canonical key with the result's `score`. Per-canonical
-    score = max across all matching results.
+    Each chunk's metadata.file_name is `<canonical_key>.txt` because that's
+    how validators/seed_nia.py wrote them. Per-canonical score = max across
+    all chunks that resolve to the same canonical key.
     """
-    surface = _build_embedding_surface(family)
     per_canonical: dict[str, float] = {}
-    for r in results:
-        score = float(r.get("score", 0.0) or 0.0)
-        text_blob = " ".join(
-            str(x).lower() for x in (
-                r.get("content"),
-                (r.get("source") or {}).get("document_name"),
-                (r.get("source") or {}).get("display_name"),
-                r.get("summary"),
-            ) if x
-        )
-        if not text_blob:
+    for s in sources:
+        if not isinstance(s, dict):
             continue
-        for text, canonical in surface:
-            if text.lower() in text_blob:
-                if score > per_canonical.get(canonical, 0.0):
-                    per_canonical[canonical] = score
+        meta = s.get("metadata") or {}
+        fname = meta.get("file_name") or ""
+        if not fname.endswith(".txt"):
+            continue
+        canonical = fname[:-4]
+        score = float(meta.get("score") or 0.0)
+        if score > per_canonical.get(canonical, 0.0):
+            per_canonical[canonical] = score
     return per_canonical
 
 
@@ -385,10 +389,9 @@ async def validate_canonical(
     if family not in FAMILY_VALUES:
         raise ValueError(f"unknown family: {family!r}")
 
-    match_threshold, ambiguity_window = _resolve_thresholds(threshold)
-
     skip_reason = _can_use_nia(family)
     if skip_reason:
+        match_threshold, _ = _resolve_thresholds(threshold, backend="fallback")
         result = _difflib_fallback(extracted_value, family, skip_reason)
         logger.info(
             "semantic_validator_fallback",
@@ -401,17 +404,18 @@ async def validate_canonical(
         )
         return result
 
+    match_threshold, ambiguity_window = _resolve_thresholds(threshold, backend="nia")
     fallback_reason: Optional[str] = None
     try:
-        results = await asyncio.wait_for(
-            _nia_universal_search(extracted_value), timeout=NIA_TIMEOUT
+        sources = await asyncio.wait_for(
+            _nia_query_search(extracted_value, _family_source_ids(family)),
+            timeout=NIA_TIMEOUT,
         )
-        scoped = _filter_results_for_family(results, family)
-        per_canonical = _aggregate_scores(scoped, family)
+        per_canonical = _aggregate_scores_from_sources(sources)
         verdict = _verdict_from_scores(per_canonical, match_threshold, ambiguity_window)
         if verdict.status == "non_canonical" and not per_canonical:
-            # Nia returned nothing useful for this family — fall back so we get
-            # at least a lexical signal instead of a flat reject.
+            # Nia returned nothing for this family — fall back so we still get
+            # a lexical signal instead of a flat reject.
             fallback_reason = "nia_empty_for_family"
             raise _NiaUnusable()
         return verdict

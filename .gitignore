@@ -9,3 +9,4 @@ dist/
 build/
 .claude/
 *.tsbuildinfo
+rcs-sidecar/validators/nia_sources.json

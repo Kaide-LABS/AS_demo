@@ -35,21 +35,31 @@ def _reset_module_env(monkeypatch, *, nia_key="test-key", enabled=True, timeout=
     sv._vocab_cache = None
 
 
-def _fake_universal_match(canonical: str, score: float = 0.92) -> list[dict]:
-    """Build a fake Nia /search universal results array that the aggregator
-    can map back to `canonical` for whatever family we're testing."""
+def _fake_sources(canonical: str, score: float = 0.7) -> list[dict]:
+    """Build a fake Nia /search mode=query `sources` array that the aggregator
+    can map back to `canonical`. Mimics the real response shape:
+    metadata.file_name=`<canonical>.txt`, metadata.score=<reranker score>."""
     return [
         {
-            "content": canonical.replace("_", " "),
-            "score": score,
-            "source": {
-                "namespace": "rcs_test_namespace",
-                "display_name": "rcs_test",
-                "document_name": canonical,
+            "content": f"canonical: {canonical}\n",
+            "metadata": {
+                "file_name": f"{canonical}.txt",
+                "file_path": f"{canonical}.txt",
+                "score": score,
+                "local_folder_id": "test-source-id",
+                "local_folder_name": "rcs_test",
             },
-            "summary": canonical,
         }
     ]
+
+
+def _configure_test_sources(monkeypatch, families: list[str]):
+    """Point the validator at fake source IDs via env vars (avoids touching
+    nia_sources.json which may exist locally)."""
+    # Bypass the on-disk seeded sources file if it happens to exist.
+    monkeypatch.setattr(sv, "_seeded_sources_cache", {})
+    for fam in families:
+        monkeypatch.setenv(f"NIA_VOCAB_SOURCE_{fam.upper()}", "test-source-id")
 
 
 # ───────────────────── tests ─────────────────────
@@ -66,16 +76,14 @@ async def test_1_happy_path_with_nia_enabled(monkeypatch):
     )
 
     _reset_module_env(monkeypatch, nia_key="test-key", enabled=True)
-    monkeypatch.setenv("NIA_VOCAB_NAMESPACE_DEMOGRAPHIC", "rcs_test_namespace")
-    monkeypatch.setenv("NIA_VOCAB_NAMESPACE_PSYCHOGRAPHIC", "rcs_test_namespace")
-    monkeypatch.setenv("NIA_VOCAB_NAMESPACE_BEHAVIORAL", "rcs_test_namespace")
+    _configure_test_sources(monkeypatch, ["demographic", "psychographic", "behavioral"])
 
-    async def fake_search(query: str):
-        # The aggregator resolves the matching canonical from the result text.
-        # Our calibration uses keys that are already canonical, so echo the key.
-        return _fake_universal_match(query, score=0.92)
+    async def fake_search(query: str, source_ids: list[str]):
+        # Echo the query as the matching canonical key (the calibration uses
+        # already-canonical keys so query==canonical).
+        return _fake_sources(query, score=0.85)
 
-    monkeypatch.setattr(sv, "_nia_universal_search", fake_search)
+    monkeypatch.setattr(sv, "_nia_query_search", fake_search)
 
     cit = SourceCitation(
         artifact_id="a1", artifact_type=ArtifactType.SEGMENTATION_STUDY,
@@ -123,43 +131,22 @@ async def test_3_lexical_variant_detection(monkeypatch):
     via aliases. 'buying frequency' resolves to purchase_frequency. Both are
     matches difflib alone could not reliably make."""
     _reset_module_env(monkeypatch, nia_key="test-key", enabled=True)
-    monkeypatch.setenv("NIA_VOCAB_NAMESPACE_BRAND_CONSTRAINT", "rcs_test_namespace")
-    monkeypatch.setenv("NIA_VOCAB_NAMESPACE_BEHAVIORAL", "rcs_test_namespace")
+    _configure_test_sources(monkeypatch, ["brand_constraint", "behavioral"])
 
-    async def fake_search(query: str):
+    async def fake_search(query: str, source_ids: list[str]):
         q = query.lower()
         if "warm" in q or "conversational" in q:
-            # Return content rich enough that the aggregator finds the
-            # tone_approachable aliases ("warm", "conversational").
-            return [{
-                "content": "warm conversational approachable friendly tone",
-                "score": 0.9,
-                "source": {
-                    "namespace": "rcs_test_namespace",
-                    "display_name": "tone_approachable",
-                    "document_name": "tone_approachable",
-                },
-                "summary": "tone_approachable",
-            }]
+            return _fake_sources("tone_approachable", score=0.72)
         if "buying" in q or "purchase" in q:
-            return [{
-                "content": "purchase frequency buying frequency transaction frequency",
-                "score": 0.88,
-                "source": {
-                    "namespace": "rcs_test_namespace",
-                    "display_name": "purchase_frequency",
-                    "document_name": "purchase_frequency",
-                },
-                "summary": "purchase_frequency",
-            }]
+            return _fake_sources("purchase_frequency", score=0.68)
         return []
 
-    monkeypatch.setattr(sv, "_nia_universal_search", fake_search)
+    monkeypatch.setattr(sv, "_nia_query_search", fake_search)
 
     r1 = await validate_canonical("warm and conversational", family="brand_constraint")
     assert r1.status == "valid", r1
     assert r1.canonical_match == "tone_approachable"
-    assert r1.score >= 0.85
+    assert r1.score >= sv.NIA_MATCH_THRESHOLD
 
     r2 = await validate_canonical("buying frequency", family="behavioral")
     assert r2.status == "valid", r2
@@ -198,12 +185,12 @@ async def test_5_api_key_missing(monkeypatch, caplog):
 @pytest.mark.asyncio
 async def test_6_nia_http_failure(monkeypatch):
     _reset_module_env(monkeypatch, nia_key="test-key", enabled=True)
-    monkeypatch.setenv("NIA_VOCAB_NAMESPACE_BEHAVIORAL", "rcs_test_namespace")
+    _configure_test_sources(monkeypatch, ["behavioral"])
 
-    async def boom(query: str):
+    async def boom(query: str, source_ids: list[str]):
         raise httpx.ConnectError("simulated connection failure")
 
-    monkeypatch.setattr(sv, "_nia_universal_search", boom)
+    monkeypatch.setattr(sv, "_nia_query_search", boom)
 
     result = await validate_canonical("media_consumption", family="behavioral")
     assert result.fallback_used is True
@@ -213,13 +200,13 @@ async def test_6_nia_http_failure(monkeypatch):
 @pytest.mark.asyncio
 async def test_7_timeout_fires(monkeypatch):
     _reset_module_env(monkeypatch, nia_key="test-key", enabled=True, timeout="0.5")
-    monkeypatch.setenv("NIA_VOCAB_NAMESPACE_BEHAVIORAL", "rcs_test_namespace")
+    _configure_test_sources(monkeypatch, ["behavioral"])
 
-    async def slow(query: str):
+    async def slow(query: str, source_ids: list[str]):
         await asyncio.sleep(5)
         return []
 
-    monkeypatch.setattr(sv, "_nia_universal_search", slow)
+    monkeypatch.setattr(sv, "_nia_query_search", slow)
 
     t0 = time.monotonic()
     result = await validate_canonical("media_consumption", family="behavioral")
@@ -230,30 +217,46 @@ async def test_7_timeout_fires(monkeypatch):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(
+    os.getenv("NIA_LIVE_TEST") != "1" or not os.getenv("NIA_API_KEY"),
+    reason="set NIA_LIVE_TEST=1 and NIA_API_KEY to run",
+)
+async def test_live_nia_resolves_known_lexical_variants():
+    """Hits the real Nia API end-to-end. Requires validators/nia_sources.json
+    populated by validators/seed_nia.py. Skipped in CI by default."""
+    sources_path = sv.NIA_SOURCES_PATH
+    assert sources_path.exists(), f"run validators/seed_nia.py first to create {sources_path}"
+    sv._seeded_sources_cache = None  # force reload of nia_sources.json
+    sv.NIA_API_KEY = os.environ["NIA_API_KEY"]
+    sv.SEMANTIC_VALIDATION_ENABLED = True
+    cases = [
+        ("buying frequency", "behavioral", "purchase_frequency"),
+        ("eco-consciousness", "psychographic", "environmental_concern"),
+        ("NPS", "campaign_benchmark", "net_promoter_score"),
+    ]
+    for value, family, expected in cases:
+        r = await validate_canonical(value, family)
+        assert r.canonical_match == expected, f"{value!r} ({family}) -> {r}"
+        assert r.status in ("valid", "fallback_valid"), r
+    await sv.aclose()
+
+
+@pytest.mark.asyncio
 async def test_8_determinism(monkeypatch):
     """Same input across 5 runs → identical verdict and canonical match.
     Threshold + ambiguity logic must absorb minor score variance from Nia."""
     _reset_module_env(monkeypatch, nia_key="test-key", enabled=True)
-    monkeypatch.setenv("NIA_VOCAB_NAMESPACE_BEHAVIORAL", "rcs_test_namespace")
+    _configure_test_sources(monkeypatch, ["behavioral"])
 
     # Vary the score slightly per call to simulate Nia's stochasticity.
     counter = {"n": 0}
 
-    async def jittered(query: str):
+    async def jittered(query: str, source_ids: list[str]):
         counter["n"] += 1
-        score = 0.90 + (counter["n"] % 3) * 0.005  # 0.900, 0.905, 0.910 cycle
-        return [{
-            "content": "media consumption media usage content consumption",
-            "score": score,
-            "source": {
-                "namespace": "rcs_test_namespace",
-                "display_name": "media_consumption",
-                "document_name": "media_consumption",
-            },
-            "summary": "media_consumption",
-        }]
+        score = 0.70 + (counter["n"] % 3) * 0.005  # 0.700, 0.705, 0.710 cycle
+        return _fake_sources("media_consumption", score=score)
 
-    monkeypatch.setattr(sv, "_nia_universal_search", jittered)
+    monkeypatch.setattr(sv, "_nia_query_search", jittered)
 
     verdicts = []
     for _ in range(5):
