@@ -48,11 +48,18 @@ class FieldExtractionPlan(BaseModel):
     assignments: List[AgentAssignment]
 
 class SourceCitation(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    # Tolerant: model output varies (page_locator, row, section_id). We coerce.
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
     artifact_id: str
-    artifact_type: ArtifactType
-    locator: str
-    excerpt: str = Field(max_length=500)
+    artifact_type: ArtifactType = ArtifactType.OTHER
+    locator: str = Field(default="", validation_alias="locator")
+    excerpt: str = Field(default="", max_length=500)
+
+    @field_validator("locator", mode="before")
+    @classmethod
+    def _coerce_locator(cls, v):
+        # If a plain string is passed, fine. If dict (unlikely), stringify.
+        return str(v) if v is not None else ""
 
 class ExtractionResult(BaseModel):
     agent_name: str
@@ -63,7 +70,7 @@ class ExtractionResult(BaseModel):
 
 class EvidenceNode(BaseModel):
     field_path: str
-    value: Union[str, float, bool, List[str], dict]
+    value: Union[str, float, bool, List[str], List[dict], dict, None] = None
     confidence: float = Field(ge=0.0, le=1.0)
     source_authority: Literal["primary_research", "secondary", "inferred"]
     citation: SourceCitation
@@ -139,6 +146,12 @@ class RadiantPersonaCalibration(BaseModel):
         if not (0.99 <= total <= 1.01):
             raise ValueError(f"segment weights sum to {total}, must equal 1.0 ± 0.01")
         return v
+
+class PartialCalibrationResponse(BaseModel):
+    status: Literal["partial"] = "partial"
+    warning: str
+    calibration: Optional[RadiantPersonaCalibration] = None
+    field_states: Dict[str, FieldState] = Field(default_factory=dict)
 
 class TheaterEvent(BaseModel):
     ts_ms: int

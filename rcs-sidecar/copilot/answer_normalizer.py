@@ -28,7 +28,7 @@ outside the JSON object."""
 
     contents = f"User Answer: {answer}\nTarget Fields: {target_fields}"
     
-    result, usage = await generate_structured(
+    result, usage, _ = await generate_structured(
         model=MODEL_FLASH,
         contents=contents,
         response_schema=AnswerNormalizationOutput,

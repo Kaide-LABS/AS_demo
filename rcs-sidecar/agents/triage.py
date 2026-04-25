@@ -16,7 +16,7 @@ async def triage_agent(artifacts: list[SourceArtifact], broadcaster: TheaterBroa
         for a in artifacts:
             contents += f"artifact_id: {a.artifact_id}\nfilename: {a.filename}\npreview: {a.raw_text[:2000]}\n---\n"
         try:
-            manifest, usage = await generate_structured(
+            manifest, usage, _ = await generate_structured(
                 model=MODEL_FLASH_LITE,
                 contents=contents,
                 response_schema=TriageManifest,

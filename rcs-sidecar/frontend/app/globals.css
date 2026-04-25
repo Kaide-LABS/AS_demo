@@ -2,7 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  background-color: theme('colors.cream');
+}
+
 body {
-  background-color: theme('colors.background');
-  color: theme('colors.foreground');
+  background-color: theme('colors.cream');
+  color: theme('colors.ink');
+  font-family: theme('fontFamily.sans');
+}
+
+* {
+  border-color: theme('colors.warmgray-200');
+}
+
+::selection {
+  background-color: theme('colors.coral');
+  color: theme('colors.cream');
 }

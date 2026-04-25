@@ -12,16 +12,22 @@ export default function DropZone({ files, setFiles }: { files: File[], setFiles:
   }, [files, setFiles])
 
   return (
-    <div className="flex-1 flex flex-col space-y-4">
-      <div 
+    <div className="flex flex-1 flex-col space-y-5">
+      <div
         onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
         onDragLeave={() => setIsDragOver(false)}
         onDrop={onDrop}
-        className={`flex-1 min-h-[300px] border-2 border-dashed rounded-xl flex items-center justify-center transition-colors ${
-          isDragOver ? 'border-indigo-500 bg-indigo-500/10' : 'border-gray-700 hover:border-gray-500'
+        style={isDragOver ? { boxShadow: '0 0 0 6px rgba(232, 93, 61, 0.12)' } : undefined}
+        className={`flex min-h-[340px] flex-1 items-center justify-center border-2 border-dashed bg-transparent px-8 py-14 text-center transition ${
+          isDragOver ? 'border-coral' : 'border-warmgray-200 hover:border-warmgray-400'
         }`}
       >
-        <p className="text-gray-400">Drag and drop artifacts here (PDF, CSV, SAV, DOCX...)</p>
+        <div className="space-y-5">
+          <h2 className="font-serif text-2xl leading-tight text-ink sm:text-3xl">Bring in the research set.</h2>
+          <p className="max-w-md text-sm leading-7 text-warmgray-400">
+            Drag and drop artifacts here. PDF, CSV, SAV, DOCX and related source files are supported.
+          </p>
+        </div>
       </div>
 
       {files.length > 0 && (

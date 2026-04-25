@@ -1,15 +1,18 @@
 import os
 import orjson
+from pathlib import Path
+import uvicorn
 from auth import verify_token
 from fastapi import Depends, FastAPI, UploadFile, File, Form, HTTPException, Header
+from fastapi.responses import Response
 
 try:
     import redis.asyncio as aioredis
 except ImportError:
     aioredis = None  # type: ignore
 from sse_starlette import EventSourceResponse
-from schemas import RadiantPersonaCalibration
-from typing import Literal
+from schemas import RadiantPersonaCalibration, PartialCalibrationResponse
+from typing import Literal, Union
 from schemas import InterviewResponse, SectionStatus
 from copilot.interview_engine import InterviewEngine
 
@@ -36,6 +39,20 @@ app.add_middleware(
 _broadcasters: dict[str, TheaterBroadcaster] = {}
 
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
+SAMPLE_ARTIFACTS_DIR = Path(__file__).resolve().parent / "demo" / "sample_artifacts"
+SAMPLE_ARTIFACT_DESCRIPTIONS = {
+    "executive_report.md": "Segmentation study — 4 segments, n=1,247",
+    "survey_responses.csv": "Raw survey data — 120 respondents, 16 fields",
+    "screener.qsf": "Qualtrics screener — 13 questions",
+    "interview_transcripts.md": "In-depth interviews — 3 transcripts",
+    "persona_brief.txt": "Strategist's audience brief — narrative prose",
+}
+SAMPLE_ARTIFACT_CONTENT_TYPES = {
+    ".md": "text/markdown",
+    ".csv": "text/csv",
+    ".qsf": "application/json",
+    ".txt": "text/plain",
+}
 
 @app.get("/healthz")
 async def healthz():
@@ -56,13 +73,44 @@ async def healthz():
     return checks
 
 
-@app.post("/v1/calibrate", response_model=RadiantPersonaCalibration)
+@app.get("/v1/sample_artifacts")
+async def list_sample_artifacts():
+    artifacts = []
+    for filename, description in SAMPLE_ARTIFACT_DESCRIPTIONS.items():
+        path = SAMPLE_ARTIFACTS_DIR / filename
+        if not path.is_file():
+            raise HTTPException(500, f"Sample artifact '{filename}' is missing")
+
+        artifacts.append({
+            "filename": filename,
+            "description": description,
+            "size_bytes": path.stat().st_size,
+            "content_type": SAMPLE_ARTIFACT_CONTENT_TYPES.get(path.suffix.lower(), "application/octet-stream"),
+        })
+
+    return artifacts
+
+
+@app.get("/v1/sample_artifacts/{filename}")
+async def get_sample_artifact(filename: str):
+    if ".." in filename or "/" in filename or "\\" in filename:
+        raise HTTPException(400, "Invalid filename")
+
+    path = SAMPLE_ARTIFACTS_DIR / filename
+    if not path.is_file():
+        raise HTTPException(404, "Sample artifact not found")
+
+    content_type = SAMPLE_ARTIFACT_CONTENT_TYPES.get(path.suffix.lower(), "application/octet-stream")
+    return Response(content=path.read_bytes(), media_type=content_type)
+
+
+@app.post("/v1/calibrate", response_model=Union[RadiantPersonaCalibration, PartialCalibrationResponse])
 async def calibrate(
     target_audience_brief: str = Form(..., max_length=2000),
     artifacts: list[UploadFile] = File(...),
     job_id: str = Form(None),
     claims: dict = Depends(verify_token),
-) -> RadiantPersonaCalibration:
+) -> Union[RadiantPersonaCalibration, PartialCalibrationResponse]:
     project_id = claims.get("sub", claims.get("project_id", "unknown"))
 
     if len(artifacts) < 1 or len(artifacts) > 25:
@@ -94,8 +142,9 @@ async def stream_theater(job_id: str) -> EventSourceResponse:
         broadcaster = TheaterBroadcaster(job_id)
         return EventSourceResponse(broadcaster.stream())
 
+    # Auto-register broadcaster: clients open SSE before POST /calibrate fires.
     if job_id not in _broadcasters:
-        raise HTTPException(404, "Job not found")
+        _broadcasters[job_id] = TheaterBroadcaster(job_id)
     return EventSourceResponse(_broadcasters[job_id].stream())
 
 @app.get("/v1/admin/costs")
@@ -219,3 +268,7 @@ async def s3_fetch(
         except Exception as e:
             fetched.append({"file_id": fid, "error": str(e)})
     return {"fetched": fetched}
+
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=False)

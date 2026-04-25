@@ -1,11 +1,14 @@
+import structlog
 from pydantic import BaseModel, Field
 from schemas import ExtractionResult, FieldExtractionPlan, SourceArtifact
 from theater import TheaterBroadcaster
 from agents.client import generate_structured, MODEL_FLASH, client
+from agents._citations import coerce_citations
 from google.genai import types
 from rules_engine import CANONICAL_KEYS
 
 AGENT_NAME = "behavioral_extractor"
+logger = structlog.get_logger()
 
 class BehavioralAttributeDraft(BaseModel):
     key: str
@@ -21,7 +24,8 @@ SYSTEM_PROMPT = f"""Extract behavioral attributes using ONLY these canonical key
 {", ".join(sorted(CANONICAL_KEYS))}.
 Do NOT use keys outside this set.
 For each attribute provide: key, value, confidence (0-1), segment_id if applicable,
-and citations with artifact_id, locator, and excerpt."""
+and citations with artifact_id, locator, and excerpt.
+If this artifact contains ANY content relevant to the fields above, you MUST populate the corresponding arrays with at least one evidence node. Return an empty array ONLY if the artifact contains absolutely no relevant content whatsoever."""
 
 
 async def behavioral_extractor(artifacts: list[SourceArtifact], plan: FieldExtractionPlan, broadcaster: TheaterBroadcaster) -> ExtractionResult:
@@ -38,14 +42,17 @@ async def behavioral_extractor(artifacts: list[SourceArtifact], plan: FieldExtra
         return ExtractionResult(agent_name=AGENT_NAME, extracted_fields={}, citations=[], validation_passed=True)
 
     try:
-        result, usage = await generate_structured(MODEL_FLASH, contents, BehavioralExtractionOutput,
+        result, usage, raw_text = await generate_structured(MODEL_FLASH, contents, BehavioralExtractionOutput,
                                            thinking_level=types.ThinkingLevel.LOW, system_instruction=SYSTEM_PROMPT)
+        if not result.behavioral_attributes:
+            logger.warning("extractor_returned_all_empty", agent=AGENT_NAME, raw_response=raw_text)
         return ExtractionResult(
             agent_name=AGENT_NAME,
             extracted_fields={
                 "segments[].behavioral_attributes": [a.model_dump() for a in result.behavioral_attributes],
             },
-            citations=[], validation_passed=True,
+            citations=coerce_citations([c for a in result.behavioral_attributes for c in a.citations], filtered),
+            validation_passed=True,
         )
     except Exception as e:
         return ExtractionResult(agent_name=AGENT_NAME, extracted_fields={}, citations=[],

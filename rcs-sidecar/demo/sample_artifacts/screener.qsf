@@ -1,0 +1,398 @@
+{
+  "SurveyEntry": {
+    "SurveyID": "SV_MIG_SP_2026_Q1",
+    "SurveyName": "Sustainable Packaging Attitudes Screener - Q1 2026",
+    "SurveyDescription": "Meridian Insights Group - Sustainable Packaging Study Screener",
+    "SurveyOwnerID": "UR_meridian_research",
+    "SurveyBrandID": "meridianinsights",
+    "DivisionID": "",
+    "SurveyLanguage": "EN",
+    "SurveyActiveResponseSet": "RS_MIG_SP_2026",
+    "SurveyStatus": "Active",
+    "SurveyStartDate": "2026-01-15 09:00:00",
+    "SurveyExpirationDate": "2026-02-28 23:59:59",
+    "SurveyCreationDate": "2026-01-10 14:22:01",
+    "CreatorID": "UR_meridian_research",
+    "LastModified": "2026-01-14 16:45:33",
+    "LastAccessed": "0000-00-00 00:00:00",
+    "LastActivated": "2026-01-15 09:00:00",
+    "Deleted": null
+  },
+  "SurveyElements": [
+    {
+      "SurveyID": "SV_MIG_SP_2026_Q1",
+      "Element": "BL",
+      "PrimaryAttribute": "Survey Blocks",
+      "SecondaryAttribute": null,
+      "TertiaryAttribute": null,
+      "Payload": [
+        {
+          "Type": "Standard",
+          "Description": "Screener Block",
+          "ID": "BL_ScreenerBlock",
+          "BlockElements": [
+            {"Type": "Question", "QuestionID": "QID1"},
+            {"Type": "Question", "QuestionID": "QID2"},
+            {"Type": "Question", "QuestionID": "QID3"},
+            {"Type": "Question", "QuestionID": "QID4"},
+            {"Type": "Question", "QuestionID": "QID5"},
+            {"Type": "Question", "QuestionID": "QID6"},
+            {"Type": "Question", "QuestionID": "QID7"},
+            {"Type": "Question", "QuestionID": "QID8"},
+            {"Type": "Question", "QuestionID": "QID9"},
+            {"Type": "Question", "QuestionID": "QID10"},
+            {"Type": "Question", "QuestionID": "QID11"},
+            {"Type": "Question", "QuestionID": "QID12"},
+            {"Type": "Question", "QuestionID": "QID13"}
+          ]
+        }
+      ]
+    },
+    {
+      "SurveyID": "SV_MIG_SP_2026_Q1",
+      "Element": "SQ",
+      "PrimaryAttribute": "QID1",
+      "SecondaryAttribute": "Age range",
+      "TertiaryAttribute": null,
+      "Payload": {
+        "QuestionText": "Which of the following best describes your age?",
+        "QuestionID": "QID1",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "SubSelector": "TX",
+        "DataExportTag": "Q1_age_range",
+        "QuestionDescription": "Age range screening",
+        "Choices": {
+          "1": {"Display": "Under 25"},
+          "2": {"Display": "25 to 34"},
+          "3": {"Display": "35 to 44"},
+          "4": {"Display": "45 to 54"},
+          "5": {"Display": "55 to 65"},
+          "6": {"Display": "Over 65"}
+        },
+        "ChoiceOrder": ["1", "2", "3", "4", "5", "6"],
+        "Validation": {"Settings": {"ForceResponse": "ON"}},
+        "Language": []
+      }
+    },
+    {
+      "SurveyID": "SV_MIG_SP_2026_Q1",
+      "Element": "SQ",
+      "PrimaryAttribute": "QID2",
+      "SecondaryAttribute": "Household income",
+      "TertiaryAttribute": null,
+      "Payload": {
+        "QuestionText": "What is your total annual household income before taxes?",
+        "QuestionID": "QID2",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "SubSelector": "TX",
+        "DataExportTag": "Q2_income_bracket",
+        "Choices": {
+          "1": {"Display": "Less than $50,000"},
+          "2": {"Display": "$50,000 to $74,999"},
+          "3": {"Display": "$75,000 to $99,999"},
+          "4": {"Display": "$100,000 to $124,999"},
+          "5": {"Display": "$125,000 to $150,000"},
+          "6": {"Display": "More than $150,000"},
+          "7": {"Display": "Prefer not to say"}
+        },
+        "ChoiceOrder": ["1", "2", "3", "4", "5", "6", "7"],
+        "Validation": {"Settings": {"ForceResponse": "ON"}},
+        "Language": []
+      }
+    },
+    {
+      "SurveyID": "SV_MIG_SP_2026_Q1",
+      "Element": "SQ",
+      "PrimaryAttribute": "QID3",
+      "SecondaryAttribute": "Household size",
+      "TertiaryAttribute": null,
+      "Payload": {
+        "QuestionText": "How many people, including yourself, live in your household?",
+        "QuestionID": "QID3",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "SubSelector": "TX",
+        "DataExportTag": "Q3_household_size",
+        "Choices": {
+          "1": {"Display": "1 (just me)"},
+          "2": {"Display": "2"},
+          "3": {"Display": "3"},
+          "4": {"Display": "4"},
+          "5": {"Display": "5"},
+          "6": {"Display": "6 or more"}
+        },
+        "ChoiceOrder": ["1", "2", "3", "4", "5", "6"],
+        "Validation": {"Settings": {"ForceResponse": "ON"}},
+        "Language": []
+      }
+    },
+    {
+      "SurveyID": "SV_MIG_SP_2026_Q1",
+      "Element": "SQ",
+      "PrimaryAttribute": "QID4",
+      "SecondaryAttribute": "Region",
+      "TertiaryAttribute": null,
+      "Payload": {
+        "QuestionText": "In which US Census region do you currently reside?",
+        "QuestionID": "QID4",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "SubSelector": "TX",
+        "DataExportTag": "Q4_geographic_region",
+        "Choices": {
+          "1": {"Display": "Northeast"},
+          "2": {"Display": "Midwest"},
+          "3": {"Display": "South"},
+          "4": {"Display": "West"}
+        },
+        "ChoiceOrder": ["1", "2", "3", "4"],
+        "Validation": {"Settings": {"ForceResponse": "ON"}},
+        "Language": []
+      }
+    },
+    {
+      "SurveyID": "SV_MIG_SP_2026_Q1",
+      "Element": "SQ",
+      "PrimaryAttribute": "QID5",
+      "SecondaryAttribute": "Shopping frequency",
+      "TertiaryAttribute": null,
+      "Payload": {
+        "QuestionText": "How often do you make primary household grocery and household-goods purchasing decisions?",
+        "QuestionID": "QID5",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "SubSelector": "TX",
+        "DataExportTag": "Q5_purchase_frequency",
+        "Choices": {
+          "1": {"Display": "I am the primary decision-maker"},
+          "2": {"Display": "I share decisions equally with someone else"},
+          "3": {"Display": "I occasionally make these decisions"},
+          "4": {"Display": "I rarely or never make these decisions"}
+        },
+        "ChoiceOrder": ["1", "2", "3", "4"],
+        "Validation": {"Settings": {"ForceResponse": "ON"}},
+        "Language": []
+      }
+    },
+    {
+      "SurveyID": "SV_MIG_SP_2026_Q1",
+      "Element": "SQ",
+      "PrimaryAttribute": "QID6",
+      "SecondaryAttribute": "Packaging attribute importance",
+      "TertiaryAttribute": null,
+      "Payload": {
+        "QuestionText": "How important are each of the following packaging attributes when you make a purchase?",
+        "QuestionID": "QID6",
+        "QuestionType": "Matrix",
+        "Selector": "Likert",
+        "SubSelector": "SingleAnswer",
+        "DataExportTag": "Q6_packaging_attributes",
+        "Choices": {
+          "1": {"Display": "Made from recycled materials"},
+          "2": {"Display": "Biodegradable or compostable"},
+          "3": {"Display": "Minimal or reduced packaging"},
+          "4": {"Display": "Plastic-free"},
+          "5": {"Display": "Reusable container"}
+        },
+        "ChoiceOrder": ["1", "2", "3", "4", "5"],
+        "Answers": {
+          "1": {"Display": "Not at all important"},
+          "2": {"Display": "Slightly important"},
+          "3": {"Display": "Moderately important"},
+          "4": {"Display": "Very important"},
+          "5": {"Display": "Extremely important"}
+        },
+        "AnswerOrder": ["1", "2", "3", "4", "5"],
+        "Validation": {"Settings": {"ForceResponse": "ON"}},
+        "Language": []
+      }
+    },
+    {
+      "SurveyID": "SV_MIG_SP_2026_Q1",
+      "Element": "SQ",
+      "PrimaryAttribute": "QID7",
+      "SecondaryAttribute": "Attitudes toward sustainability claims",
+      "TertiaryAttribute": null,
+      "Payload": {
+        "QuestionText": "Please indicate how much you agree or disagree with each of the following statements.",
+        "QuestionID": "QID7",
+        "QuestionType": "Matrix",
+        "Selector": "Likert",
+        "SubSelector": "SingleAnswer",
+        "DataExportTag": "Q7_sustainability_attitudes",
+        "Choices": {
+          "1": {"Display": "Packaging sustainability meaningfully influences my purchase decisions."},
+          "2": {"Display": "I trust most sustainability claims that appear on product packaging."},
+          "3": {"Display": "Most companies use sustainability claims to justify higher prices without changing their practices."},
+          "4": {"Display": "I would pay more for a product with verified sustainable packaging."},
+          "5": {"Display": "Recyclability matters more to me than biodegradability."}
+        },
+        "ChoiceOrder": ["1", "2", "3", "4", "5"],
+        "Answers": {
+          "1": {"Display": "Strongly disagree"},
+          "2": {"Display": "Disagree"},
+          "3": {"Display": "Neither agree nor disagree"},
+          "4": {"Display": "Agree"},
+          "5": {"Display": "Strongly agree"}
+        },
+        "AnswerOrder": ["1", "2", "3", "4", "5"],
+        "Validation": {"Settings": {"ForceResponse": "ON"}},
+        "Language": []
+      }
+    },
+    {
+      "SurveyID": "SV_MIG_SP_2026_Q1",
+      "Element": "SQ",
+      "PrimaryAttribute": "QID8",
+      "SecondaryAttribute": "Willingness to pay",
+      "TertiaryAttribute": null,
+      "Payload": {
+        "QuestionText": "How much more, if anything, would you be willing to pay for a product with verified sustainable packaging compared to a conventional alternative?",
+        "QuestionID": "QID8",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "SubSelector": "TX",
+        "DataExportTag": "Q8_price_sensitivity",
+        "Choices": {
+          "1": {"Display": "Nothing extra"},
+          "2": {"Display": "Up to 5% more"},
+          "3": {"Display": "6% to 10% more"},
+          "4": {"Display": "11% to 15% more"},
+          "5": {"Display": "16% to 20% more"},
+          "6": {"Display": "More than 20%"}
+        },
+        "ChoiceOrder": ["1", "2", "3", "4", "5", "6"],
+        "Validation": {"Settings": {"ForceResponse": "ON"}},
+        "Language": []
+      }
+    },
+    {
+      "SurveyID": "SV_MIG_SP_2026_Q1",
+      "Element": "SQ",
+      "PrimaryAttribute": "QID9",
+      "SecondaryAttribute": "Primary information source",
+      "TertiaryAttribute": null,
+      "Payload": {
+        "QuestionText": "Where do you primarily learn about product sustainability before making a purchase?",
+        "QuestionID": "QID9",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "SubSelector": "TX",
+        "DataExportTag": "Q9_information_sources",
+        "Choices": {
+          "1": {"Display": "Social media (Instagram, TikTok, YouTube)"},
+          "2": {"Display": "Product labels and packaging itself"},
+          "3": {"Display": "Retailer websites and apps"},
+          "4": {"Display": "Friends and family recommendations"},
+          "5": {"Display": "News articles and consumer publications"},
+          "6": {"Display": "The brand's own website"},
+          "7": {"Display": "I don't actively research sustainability"}
+        },
+        "ChoiceOrder": ["1", "2", "3", "4", "5", "6", "7"],
+        "Validation": {"Settings": {"ForceResponse": "ON"}},
+        "Language": []
+      }
+    },
+    {
+      "SurveyID": "SV_MIG_SP_2026_Q1",
+      "Element": "SQ",
+      "PrimaryAttribute": "QID10",
+      "SecondaryAttribute": "Brand switching",
+      "TertiaryAttribute": null,
+      "Payload": {
+        "QuestionText": "In the past 12 months, have you switched brands because of packaging or sustainability concerns?",
+        "QuestionID": "QID10",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "SubSelector": "TX",
+        "DataExportTag": "Q10_brand_affinity",
+        "Choices": {
+          "1": {"Display": "Yes, for sustainability reasons"},
+          "2": {"Display": "Yes, for other packaging reasons (functionality, damage, etc.)"},
+          "3": {"Display": "No, I have not switched brands"},
+          "4": {"Display": "I don't remember"}
+        },
+        "ChoiceOrder": ["1", "2", "3", "4"],
+        "Validation": {"Settings": {"ForceResponse": "ON"}},
+        "Language": []
+      }
+    },
+    {
+      "SurveyID": "SV_MIG_SP_2026_Q1",
+      "Element": "SQ",
+      "PrimaryAttribute": "QID11",
+      "SecondaryAttribute": "Certification recognition",
+      "TertiaryAttribute": null,
+      "Payload": {
+        "QuestionText": "Which type of sustainability claim do you trust most?",
+        "QuestionID": "QID11",
+        "QuestionType": "MC",
+        "Selector": "SAVR",
+        "SubSelector": "TX",
+        "DataExportTag": "Q11_trust_in_institutions",
+        "Choices": {
+          "1": {"Display": "Third-party certification logo (e.g., FSC, B Corp, How2Recycle)"},
+          "2": {"Display": "Specific numeric claim (e.g., '43% recycled content')"},
+          "3": {"Display": "General claim (e.g., 'eco-friendly,' 'sustainable')"},
+          "4": {"Display": "A brand's written pledge or commitment on its website"},
+          "5": {"Display": "I do not trust any sustainability claims"}
+        },
+        "ChoiceOrder": ["1", "2", "3", "4", "5"],
+        "Validation": {"Settings": {"ForceResponse": "ON"}},
+        "Language": []
+      }
+    },
+    {
+      "SurveyID": "SV_MIG_SP_2026_Q1",
+      "Element": "SQ",
+      "PrimaryAttribute": "QID12",
+      "SecondaryAttribute": "Trust by information source",
+      "TertiaryAttribute": null,
+      "Payload": {
+        "QuestionText": "How much do you trust each of the following information sources when it comes to sustainability claims?",
+        "QuestionID": "QID12",
+        "QuestionType": "Matrix",
+        "Selector": "Likert",
+        "SubSelector": "SingleAnswer",
+        "DataExportTag": "Q12_source_trust",
+        "Choices": {
+          "1": {"Display": "Independent news and consumer publications"},
+          "2": {"Display": "Government agencies (EPA, FTC)"},
+          "3": {"Display": "Third-party certification bodies"},
+          "4": {"Display": "The brand itself"},
+          "5": {"Display": "Social media creators and influencers"},
+          "6": {"Display": "Retailers (Amazon, Target, etc.)"}
+        },
+        "ChoiceOrder": ["1", "2", "3", "4", "5", "6"],
+        "Answers": {
+          "1": {"Display": "Do not trust at all"},
+          "2": {"Display": "Trust a little"},
+          "3": {"Display": "Trust somewhat"},
+          "4": {"Display": "Trust a lot"},
+          "5": {"Display": "Trust completely"}
+        },
+        "AnswerOrder": ["1", "2", "3", "4", "5"],
+        "Validation": {"Settings": {"ForceResponse": "ON"}},
+        "Language": []
+      }
+    },
+    {
+      "SurveyID": "SV_MIG_SP_2026_Q1",
+      "Element": "SQ",
+      "PrimaryAttribute": "QID13",
+      "SecondaryAttribute": "Open-text definition",
+      "TertiaryAttribute": null,
+      "Payload": {
+        "QuestionText": "In your own words, what does 'sustainable packaging' mean to you? Please answer in one or two sentences.",
+        "QuestionID": "QID13",
+        "QuestionType": "TE",
+        "Selector": "ML",
+        "DataExportTag": "Q13_sustainability_definition",
+        "Validation": {"Settings": {"ForceResponse": "OFF", "MinWordCount": 5, "MaxWordCount": 100}},
+        "Language": []
+      }
+    }
+  ]
+}

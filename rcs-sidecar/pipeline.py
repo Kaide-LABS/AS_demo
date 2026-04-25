@@ -1,5 +1,6 @@
 import asyncio
 import structlog
+import traceback
 from cost_tracker import CostTracker
 logger = structlog.get_logger()
 
@@ -9,7 +10,7 @@ from google.genai import types
 from schemas import (
     RadiantPersonaCalibration, MergedEvidence, RuleViolation,
     PersonaSegment, BehavioralAttribute, Verbatim, SourceCitation,
-    ArtifactType, FieldState,
+    ArtifactType, FieldState, PartialCalibrationResponse,
 )
 from theater import TheaterBroadcaster
 from parsers.detect import detect_and_parse
@@ -95,7 +96,7 @@ async def synthesis_agent(
         f"Evidence graph:\n{evidence_json}\n"
     )
 
-    result, usage = await generate_structured(
+    result, usage, _ = await generate_structured(
         model=MODEL_PRO,
         contents=contents,
         response_schema=RadiantPersonaCalibration,
@@ -106,7 +107,7 @@ async def synthesis_agent(
     result.project_id = project_id
     return result
 
-async def targeted_retry(calibration: RadiantPersonaCalibration, violations: list[RuleViolation]) -> RadiantPersonaCalibration:
+async def targeted_retry(calibration: RadiantPersonaCalibration, violations: list[RuleViolation], broadcaster: TheaterBroadcaster) -> RadiantPersonaCalibration:
     if not client:
         return calibration
     violation_text = "\n".join(f"- {v.rule_name}: {v.description} (field: {v.field_path})" for v in violations)
@@ -116,7 +117,7 @@ async def targeted_retry(calibration: RadiantPersonaCalibration, violations: lis
         f"Violations:\n{violation_text}\n\n"
         f"Current calibration:\n{calibration.model_dump_json()}"
     )
-    result, usage = await generate_structured(
+    result, usage, _ = await generate_structured(
         model=MODEL_PRO,
         contents=contents,
         response_schema=RadiantPersonaCalibration,
@@ -137,7 +138,7 @@ async def _safe_extract(coro, agent_name, broadcaster):
         from schemas import ExtractionResult
         return ExtractionResult(agent_name=agent_name, extracted_fields={}, citations=[], validation_passed=False, validation_errors=[str(e)])
 
-async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile], broadcaster: TheaterBroadcaster) -> RadiantPersonaCalibration:
+async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile], broadcaster: TheaterBroadcaster) -> RadiantPersonaCalibration | PartialCalibrationResponse:
     cost_tracker = CostTracker(broadcaster.job_id)
     logger.bind(trace_id=broadcaster.job_id, project_id=project_id)
     await broadcaster.emit("ingest", f"Parsing {len(uploads)} files...")
@@ -176,14 +177,26 @@ async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile]
     field_state.update(merged)
     await broadcaster.emit("merge", f"Evidence Merger: {merged.deduplication_stats} ... Field-State: {field_state.summary()}")
 
-    draft = await synthesis_agent(project_id, brief, merged, field_state.export(), broadcaster)
+    try:
+        draft = await synthesis_agent(project_id, brief, merged, field_state.export(), broadcaster)
+    except Exception as e:
+        tb = traceback.format_exc()
+        logger.error("synthesis_failed", error=str(e), traceback=tb)
+        await broadcaster.emit("error", f"Synthesis failed: {e}")
+        await broadcaster.emit("done", "Returning partial calibration due to synthesis failure")
+        return PartialCalibrationResponse(
+            status="partial",
+            warning=str(e),
+            calibration=None,
+            field_states=field_state.export(),
+        )
 
     calibration, violations = validate(draft)
     field_state.update_from_validation(calibration, violations)
     retry_budget = 2
     while violations and retry_budget > 0:
         await broadcaster.emit("validate", f"Validation failed: {len(violations)} violations. Retrying...")
-        calibration = await targeted_retry(calibration, violations)
+        calibration = await targeted_retry(calibration, violations, broadcaster)
         calibration, violations = validate(calibration)
         field_state.update_from_validation(calibration, violations)
         retry_budget -= 1

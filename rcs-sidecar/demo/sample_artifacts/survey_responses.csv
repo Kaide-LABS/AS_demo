@@ -1,0 +1,121 @@
+respondent_id,age,gender,region,income_bracket,household_size,Q1_sustainability_influence,Q2_switched_brands_12mo,Q3_willing_premium_pct,Q4_trust_sustainability_claims,Q5_primary_info_source,Q6_recycling_frequency,Q7_packaging_over_price,Q8_eco_purchase_frequency,Q9_primary_switching_reason,Q10_segment
+R-0001,34,Female,Northeast,$125k-$150k,2,5,Yes,15,4,Social Media,Always,5,Weekly,Environmental,Conviction Buyer
+R-0002,29,Female,West,$100k-$125k,3,5,Yes,20,3,Brand Website,Always,4,Weekly,Environmental,Conviction Buyer
+R-0003,41,Male,Northeast,$125k-$150k,2,4,Yes,10,4,Social Media,Usually,5,Monthly,Environmental,Conviction Buyer
+R-0004,38,Female,West,$125k-$150k,3,5,Yes,25,4,Brand Website,Always,5,Weekly,Environmental,Conviction Buyer
+R-0005,32,Non-binary,Northeast,$100k-$125k,2,5,Yes,15,3,Social Media,Always,4,Weekly,Environmental,Conviction Buyer
+R-0006,45,Female,Midwest,$125k-$150k,3,4,Yes,10,3,Social Media,Usually,4,Monthly,Environmental,Conviction Buyer
+R-0007,36,Female,South,$100k-$125k,4,5,Yes,20,4,Brand Website,Always,5,Weekly,Environmental,Conviction Buyer
+R-0008,28,Male,West,$100k-$125k,2,5,Yes,15,3,Social Media,Always,4,Weekly,Environmental,Conviction Buyer
+R-0009,42,Female,Northeast,$125k-$150k,3,4,No,10,4,Social Media,Always,5,Monthly,Environmental,Conviction Buyer
+R-0010,33,Female,West,$100k-$125k,2,5,Yes,15,3,Brand Website,Usually,4,Weekly,Environmental,Conviction Buyer
+R-0011,39,Male,Midwest,$125k-$150k,3,5,Yes,20,4,Social Media,Always,5,Weekly,Environmental,Conviction Buyer
+R-0012,31,Female,Northeast,$100k-$125k,2,4,Yes,10,3,Brand Website,Always,4,Monthly,Environmental,Conviction Buyer
+R-0013,44,Female,South,$125k-$150k,3,5,Yes,25,4,Social Media,Always,5,Weekly,Environmental,Conviction Buyer
+R-0014,27,Female,West,$100k-$125k,2,5,Yes,15,3,Social Media,Usually,4,Weekly,Environmental,Conviction Buyer
+R-0015,40,Male,Northeast,$125k-$150k,3,4,Yes,10,4,Brand Website,Always,5,Monthly,Environmental,Conviction Buyer
+R-0016,35,Female,West,$125k-$150k,2,5,Yes,20,3,Social Media,Always,4,Weekly,Environmental,Conviction Buyer
+R-0017,30,Non-binary,Northeast,$100k-$125k,2,5,Yes,15,4,Brand Website,Always,5,Weekly,Environmental,Conviction Buyer
+R-0018,37,Female,Midwest,$100k-$125k,3,4,No,10,3,Social Media,Usually,4,Monthly,Environmental,Conviction Buyer
+R-0019,43,Female,South,$125k-$150k,4,5,Yes,25,4,Brand Website,Always,5,Weekly,Environmental,Conviction Buyer
+R-0020,26,Female,West,$75k-$100k,1,5,Yes,10,3,Social Media,Always,4,Weekly,Environmental,Conviction Buyer
+R-0021,41,Male,Northeast,$125k-$150k,3,4,Yes,15,4,Social Media,Usually,5,Monthly,Environmental,Conviction Buyer
+R-0022,33,Female,West,$100k-$125k,2,5,Yes,20,3,Brand Website,Always,4,Weekly,Environmental,Conviction Buyer
+R-0023,29,Female,Northeast,$100k-$125k,2,5,Yes,15,4,Social Media,Always,5,Weekly,Environmental,Conviction Buyer
+R-0024,46,Female,Midwest,$125k-$150k,3,4,No,10,3,News Articles,Usually,4,Monthly,Environmental,Conviction Buyer
+R-0025,34,Male,West,$100k-$125k,2,5,Yes,20,4,Social Media,Always,5,Weekly,Environmental,Conviction Buyer
+R-0026,38,Female,South,$125k-$150k,3,5,Yes,15,4,Brand Website,Always,4,Weekly,Environmental,Conviction Buyer
+R-0027,38,Female,Midwest,$100k-$125k,4,4,Yes,5,3,Retailer Website,Usually,3,Monthly,Price,Pragmatic Parent
+R-0028,42,Male,South,$75k-$100k,5,3,No,0,2,Friends & Family,Sometimes,2,Quarterly,Price,Pragmatic Parent
+R-0029,35,Female,Northeast,$100k-$125k,4,4,Yes,10,3,Retailer Website,Usually,3,Monthly,Environmental,Pragmatic Parent
+R-0030,40,Female,West,$125k-$150k,3,4,No,5,3,Friends & Family,Usually,2,Monthly,Price,Pragmatic Parent
+R-0031,36,Male,Midwest,$75k-$100k,4,3,Yes,5,2,Retailer Website,Sometimes,2,Quarterly,Price,Pragmatic Parent
+R-0032,44,Female,South,$100k-$125k,5,4,Yes,10,3,Retailer Website,Usually,3,Monthly,Environmental,Pragmatic Parent
+R-0033,33,Female,Northeast,$75k-$100k,3,4,No,0,3,Friends & Family,Sometimes,2,Quarterly,Price,Pragmatic Parent
+R-0034,39,Male,West,$125k-$150k,4,3,No,5,2,Retailer Website,Usually,2,Monthly,Availability,Pragmatic Parent
+R-0035,41,Female,Midwest,$100k-$125k,4,4,Yes,10,3,Retailer Website,Usually,3,Monthly,Environmental,Pragmatic Parent
+R-0036,37,Female,South,$75k-$100k,5,3,No,0,2,Friends & Family,Sometimes,2,Quarterly,Price,Pragmatic Parent
+R-0037,43,Male,Northeast,$100k-$125k,4,4,Yes,5,3,Retailer Website,Usually,3,Monthly,Environmental,Pragmatic Parent
+R-0038,34,Female,West,$75k-$100k,3,3,No,0,2,Friends & Family,Usually,2,Quarterly,Price,Pragmatic Parent
+R-0039,38,Female,Midwest,$100k-$125k,4,4,Yes,5,3,Retailer Website,Usually,3,Monthly,Price,Pragmatic Parent
+R-0040,45,Male,South,$125k-$150k,4,4,No,10,3,Retailer Website,Usually,3,Monthly,Environmental,Pragmatic Parent
+R-0041,36,Female,Northeast,$75k-$100k,3,3,No,0,3,Friends & Family,Sometimes,2,Quarterly,Price,Pragmatic Parent
+R-0042,42,Female,West,$100k-$125k,5,4,Yes,10,3,Retailer Website,Usually,3,Monthly,Environmental,Pragmatic Parent
+R-0043,39,Male,Midwest,$75k-$100k,4,3,No,5,2,Friends & Family,Sometimes,2,Quarterly,Price,Pragmatic Parent
+R-0044,35,Female,South,$100k-$125k,4,4,Yes,5,3,Retailer Website,Usually,3,Monthly,Environmental,Pragmatic Parent
+R-0045,41,Female,Northeast,$125k-$150k,3,4,No,10,3,Retailer Website,Usually,3,Monthly,Price,Pragmatic Parent
+R-0046,37,Male,West,$75k-$100k,4,3,Yes,0,2,Friends & Family,Sometimes,2,Quarterly,Price,Pragmatic Parent
+R-0047,44,Female,Midwest,$100k-$125k,5,4,Yes,10,3,Retailer Website,Usually,3,Monthly,Environmental,Pragmatic Parent
+R-0048,33,Female,South,$75k-$100k,3,3,No,0,3,Friends & Family,Usually,2,Quarterly,Price,Pragmatic Parent
+R-0049,40,Male,Northeast,$100k-$125k,4,4,Yes,5,3,Retailer Website,Usually,3,Monthly,Environmental,Pragmatic Parent
+R-0050,38,Female,West,$125k-$150k,3,4,No,5,3,Retailer Website,Usually,3,Monthly,Price,Pragmatic Parent
+R-0051,42,Male,Midwest,$75k-$100k,4,3,No,0,2,Friends & Family,Sometimes,2,Quarterly,Price,Pragmatic Parent
+R-0052,36,Female,South,$100k-$125k,5,4,Yes,10,3,Retailer Website,Usually,3,Monthly,Environmental,Pragmatic Parent
+R-0053,43,Female,Northeast,$75k-$100k,4,3,No,0,3,Friends & Family,Sometimes,2,Quarterly,Price,Pragmatic Parent
+R-0054,34,Male,West,$100k-$125k,4,4,Yes,5,3,Retailer Website,Usually,3,Monthly,Environmental,Pragmatic Parent
+R-0055,39,Female,Midwest,$125k-$150k,3,4,No,10,3,Retailer Website,Usually,3,Monthly,Price,Pragmatic Parent
+R-0056,45,Female,South,$75k-$100k,5,3,No,0,2,Friends & Family,Sometimes,2,Quarterly,Price,Pragmatic Parent
+R-0057,37,Male,Northeast,$100k-$125k,4,4,Yes,5,3,Retailer Website,Usually,3,Monthly,Environmental,Pragmatic Parent
+R-0058,41,Female,West,$75k-$100k,4,3,No,0,3,Friends & Family,Usually,2,Quarterly,Price,Pragmatic Parent
+R-0059,35,Female,Midwest,$100k-$125k,5,4,Yes,10,3,Retailer Website,Usually,3,Monthly,Environmental,Pragmatic Parent
+R-0060,44,Male,South,$125k-$150k,4,4,No,5,3,Retailer Website,Usually,3,Monthly,Price,Pragmatic Parent
+R-0061,38,Female,Northeast,$75k-$100k,3,3,No,0,3,Friends & Family,Sometimes,2,Quarterly,Price,Pragmatic Parent
+R-0062,42,Female,West,$100k-$125k,5,4,Yes,10,3,Retailer Website,Usually,3,Monthly,Environmental,Pragmatic Parent
+R-0063,36,Male,Midwest,$75k-$100k,4,3,Yes,5,2,Friends & Family,Sometimes,2,Quarterly,Price,Pragmatic Parent
+R-0064,40,Female,South,$100k-$125k,4,4,Yes,5,3,Retailer Website,Usually,3,Monthly,Environmental,Pragmatic Parent
+R-0065,43,Female,Northeast,$125k-$150k,3,4,No,10,3,Retailer Website,Usually,3,Monthly,Price,Pragmatic Parent
+R-0066,37,Male,West,$75k-$100k,4,3,No,0,2,Friends & Family,Sometimes,2,Quarterly,Price,Pragmatic Parent
+R-0067,41,Female,Midwest,$100k-$125k,5,4,Yes,10,3,Retailer Website,Usually,3,Monthly,Environmental,Pragmatic Parent
+R-0068,54,Male,Midwest,$75k-$100k,2,3,No,0,2,News Articles,Sometimes,2,Rarely,Quality,Skeptical Shopper
+R-0069,58,Female,South,$100k-$125k,2,2,No,0,1,Product Labels,Sometimes,2,Quarterly,Quality,Skeptical Shopper
+R-0070,47,Male,Northeast,$75k-$100k,3,3,No,5,2,News Articles,Sometimes,3,Rarely,Price,Skeptical Shopper
+R-0071,62,Female,West,$100k-$125k,2,2,Yes,0,1,Product Labels,Usually,2,Quarterly,Quality,Skeptical Shopper
+R-0072,51,Male,Midwest,$125k-$150k,3,3,No,10,2,News Articles,Sometimes,3,Rarely,Quality,Skeptical Shopper
+R-0073,56,Female,South,$75k-$100k,2,2,No,0,1,Product Labels,Sometimes,2,Quarterly,Price,Skeptical Shopper
+R-0074,49,Male,Northeast,$100k-$125k,3,3,No,5,2,News Articles,Sometimes,3,Rarely,Quality,Skeptical Shopper
+R-0075,65,Female,West,$75k-$100k,1,2,No,0,1,Product Labels,Usually,2,Quarterly,Quality,Skeptical Shopper
+R-0076,53,Male,Midwest,$100k-$125k,2,3,Yes,10,2,News Articles,Sometimes,3,Rarely,Quality,Skeptical Shopper
+R-0077,60,Female,South,$125k-$150k,2,2,No,5,1,Product Labels,Sometimes,2,Quarterly,Quality,Skeptical Shopper
+R-0078,48,Male,Northeast,$75k-$100k,3,3,No,0,2,News Articles,Sometimes,3,Rarely,Price,Skeptical Shopper
+R-0079,57,Female,West,$100k-$125k,2,2,No,0,1,Product Labels,Usually,2,Quarterly,Quality,Skeptical Shopper
+R-0080,52,Male,Midwest,$75k-$100k,3,3,No,10,2,News Articles,Sometimes,3,Rarely,Quality,Skeptical Shopper
+R-0081,61,Female,South,$100k-$125k,2,2,Yes,0,1,Product Labels,Sometimes,2,Quarterly,Quality,Skeptical Shopper
+R-0082,46,Male,Northeast,$125k-$150k,3,3,No,5,2,News Articles,Sometimes,3,Rarely,Price,Skeptical Shopper
+R-0083,59,Female,West,$75k-$100k,2,2,No,0,1,Product Labels,Usually,2,Quarterly,Quality,Skeptical Shopper
+R-0084,55,Male,Midwest,$100k-$125k,3,3,Yes,10,2,News Articles,Sometimes,3,Rarely,Quality,Skeptical Shopper
+R-0085,63,Female,South,$100k-$125k,2,2,No,0,1,Product Labels,Sometimes,2,Quarterly,Quality,Skeptical Shopper
+R-0086,50,Male,Northeast,$75k-$100k,3,3,No,5,2,News Articles,Sometimes,3,Rarely,Price,Skeptical Shopper
+R-0087,58,Female,West,$100k-$125k,2,2,No,0,1,Product Labels,Usually,2,Quarterly,Quality,Skeptical Shopper
+R-0088,54,Male,Midwest,$125k-$150k,2,3,No,10,2,News Articles,Sometimes,3,Rarely,Quality,Skeptical Shopper
+R-0089,47,Female,South,$75k-$100k,3,2,Yes,0,1,Product Labels,Sometimes,2,Quarterly,Quality,Skeptical Shopper
+R-0090,56,Male,Northeast,$100k-$125k,2,3,No,5,2,News Articles,Sometimes,3,Rarely,Quality,Skeptical Shopper
+R-0091,64,Female,West,$75k-$100k,1,2,No,0,1,Product Labels,Usually,2,Quarterly,Quality,Skeptical Shopper
+R-0092,45,Male,Midwest,$100k-$125k,3,3,No,10,2,News Articles,Sometimes,3,Rarely,Price,Skeptical Shopper
+R-0093,59,Female,South,$125k-$150k,2,2,Yes,5,1,Product Labels,Sometimes,2,Quarterly,Quality,Skeptical Shopper
+R-0094,51,Male,Northeast,$75k-$100k,3,3,No,0,2,News Articles,Sometimes,3,Rarely,Price,Skeptical Shopper
+R-0095,57,Female,West,$100k-$125k,2,2,No,0,1,Product Labels,Usually,2,Quarterly,Quality,Skeptical Shopper
+R-0096,53,Male,Midwest,$75k-$100k,3,3,No,10,2,News Articles,Sometimes,3,Rarely,Quality,Skeptical Shopper
+R-0097,60,Female,South,$100k-$125k,2,2,No,0,1,Product Labels,Sometimes,2,Quarterly,Quality,Skeptical Shopper
+R-0098,48,Male,Northeast,$125k-$150k,3,3,No,5,2,News Articles,Sometimes,3,Rarely,Quality,Skeptical Shopper
+R-0099,62,Female,West,$75k-$100k,1,2,Yes,0,1,Product Labels,Usually,2,Quarterly,Quality,Skeptical Shopper
+R-0100,55,Male,Midwest,$100k-$125k,3,3,No,10,2,News Articles,Sometimes,3,Rarely,Quality,Skeptical Shopper
+R-0101,49,Female,South,$75k-$100k,2,2,No,0,1,Product Labels,Sometimes,2,Quarterly,Quality,Skeptical Shopper
+R-0102,29,Male,West,$100k-$125k,2,1,No,0,2,Retailer Website,Rarely,1,Never,Availability,Convenience Prioritizer
+R-0103,32,Female,Northeast,$75k-$100k,1,2,Yes,5,3,Retailer Website,Rarely,2,Rarely,Availability,Convenience Prioritizer
+R-0104,27,Male,West,$100k-$125k,2,1,No,0,2,Retailer Website,Rarely,1,Never,Availability,Convenience Prioritizer
+R-0105,35,Female,South,$100k-$125k,2,2,No,0,2,Retailer Website,Sometimes,2,Rarely,Availability,Convenience Prioritizer
+R-0106,30,Male,Northeast,$75k-$100k,1,1,No,0,2,Retailer Website,Rarely,1,Never,Availability,Convenience Prioritizer
+R-0107,38,Female,West,$125k-$150k,3,2,Yes,5,3,Retailer Website,Sometimes,2,Rarely,Availability,Convenience Prioritizer
+R-0108,26,Male,Midwest,$75k-$100k,1,1,No,0,2,Retailer Website,Rarely,1,Never,Availability,Convenience Prioritizer
+R-0109,33,Female,South,$100k-$125k,2,2,No,0,2,Retailer Website,Rarely,2,Rarely,Availability,Convenience Prioritizer
+R-0110,28,Male,West,$100k-$125k,2,1,No,5,2,Retailer Website,Sometimes,1,Never,Availability,Convenience Prioritizer
+R-0111,36,Female,Northeast,$75k-$100k,1,2,No,0,3,Retailer Website,Rarely,2,Rarely,Availability,Convenience Prioritizer
+R-0112,31,Male,Midwest,$100k-$125k,2,1,No,0,2,Retailer Website,Rarely,1,Never,Availability,Convenience Prioritizer
+R-0113,25,Female,West,$75k-$100k,1,2,Yes,5,2,Retailer Website,Sometimes,2,Rarely,Availability,Convenience Prioritizer
+R-0114,34,Male,South,$100k-$125k,2,1,No,0,2,Retailer Website,Rarely,1,Never,Availability,Convenience Prioritizer
+R-0115,37,Non-binary,Northeast,$125k-$150k,2,2,No,5,3,Retailer Website,Sometimes,2,Rarely,Availability,Convenience Prioritizer
+R-0116,29,Male,West,$75k-$100k,1,1,No,0,2,Retailer Website,Rarely,1,Never,Availability,Convenience Prioritizer
+R-0117,32,Female,Midwest,$100k-$125k,2,2,Yes,0,2,Retailer Website,Rarely,2,Rarely,Availability,Convenience Prioritizer
+R-0118,40,Male,South,$125k-$150k,2,1,No,5,2,Retailer Website,Sometimes,1,Never,Availability,Convenience Prioritizer
+R-0119,27,Female,West,$75k-$100k,1,2,No,0,3,Retailer Website,Rarely,2,Rarely,Availability,Convenience Prioritizer
+R-0120,33,Male,Northeast,$100k-$125k,2,1,No,0,2,Retailer Website,Rarely,1,Never,Availability,Convenience Prioritizer

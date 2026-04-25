@@ -1,0 +1,76 @@
+Sustainable Packaging Attitudes Study — Target Audience Brief
+Meridian Insights Group · Q1 2026
+
+Prepared by: J. Reyes, Strategy Associate
+For: Internal team review, March 2026
+
+The audience we're working with for this study is the middle-to-upper-middle
+US household — income band $75,000 to $150,000 annually — and what we're
+really trying to understand is how these people think about packaging when
+they're actually shopping, not when they're being surveyed about their
+values. Because those are two very different conversations, and the study
+makes that really clear.
+
+We pulled n=1,247 respondents, fielded from January 15 to February 28, mixed
+mode, plus twenty-four in-depth interviews for depth. The overall finding
+that jumped out at me was that sixty-seven percent say packaging
+sustainability genuinely influences their purchases, but fifty-eight percent
+distrust the claims they see on pack. That tension basically defines the
+whole category. Consumers want this to matter. They don't believe most of
+what brands are telling them about it. So the work is less about convincing
+them that sustainability matters and more about earning the right to be
+believed when you say you're doing it.
+
+There are four segments that came out of the latent class analysis and
+they're pretty distinct. About twenty-two percent are what we're calling
+Conviction Buyers — these are the people who are genuinely sustainability-
+driven, skew female, skew 28 to 42, higher-income, living in coastal metros
+mostly. They pay a premium, they switch brands, they punish greenwashing
+aggressively, and they get their information from social media creators who
+call out brands for lying. They're the smallest segment but they're loud and
+they shape category norms. Seventy-three percent of this group has paid a
+sustainability premium in the last year.
+
+Then we have Pragmatic Parents at thirty-four percent, which is the biggest
+chunk. Families with kids, mixed gender, 32 to 48, household size of four or
+five on average, income $75k to $125k mostly. These are the people where
+sustainability is a real consideration but it's competing with budget,
+availability, and honestly just the exhaustion of keeping a family running.
+They shop at warehouse clubs and supercenters, they learn about products
+from retailer apps and from their friends, and they'll pick the sustainable
+option at price parity — but not at a ten percent premium. This is where the
+volume lives.
+
+Twenty-eight percent are Skeptical Shoppers, which I find the most
+interesting segment honestly. They're older, mean age 54, lean male, and
+they're not anti-sustainability at all — they're just absolutely done being
+marketed to. Their trust in institutions score is the lowest of any segment,
+2.1 on a 5-point scale. They want certification numbers, they want
+third-party auditors, they want specificity. They read labels carefully and
+they punish vagueness. You can win with them, but you have to earn it with
+evidence. Sixty-eight percent of them recognize the FSC logo unprompted.
+
+And then sixteen percent are Convenience Prioritizers, the hardest segment
+to move. They're younger, urban, delivery-first, and packaging sustainability
+basically doesn't register for them as a decision factor. Only twelve percent
+have paid a premium. Persuasion isn't going to work here. The move with this
+group is product design — make the sustainable option the default in
+delivery channels and let it ride without any claim-based messaging. Don't
+spend ad dollars here.
+
+The big messaging implication that kept coming up across all the segments
+except Conviction Buyers is that generic green language actively hurts
+credibility. The words "green," "eco-friendly," and "natural" without
+supporting certification drove statistically significant credibility
+declines. "100% sustainable" scored lowest of anything we tested. So the
+creative brief should basically read: if you can't back it up with a number
+and a year and a third party, don't say it.
+
+Willingness-to-pay averages 8.3% across the whole sample but that's a
+misleading number because the variance between segments is huge — 17.4% for
+Conviction, 1.8% for Convenience. Pricing strategy has to be segment-aware.
+
+Next steps I'd recommend: a follow-up qual with Pragmatic Parents specifically
+around price parity thresholds, and a claim-testing quant wave with the
+Skeptical segment to figure out exactly which certification logos move the
+needle.

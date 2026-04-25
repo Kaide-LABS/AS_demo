@@ -14,15 +14,21 @@ export default function FieldStateBar({ events }: { events: TheaterEvent[] }) {
   const total = v + c + u || 1
 
   return (
-    <div className="space-y-2">
-      <div className="flex justify-between text-xs text-gray-400">
-        <span>Field State Progress</span>
+    <div className="space-y-3 border-t border-warmgray-200 pt-5">
+      <div className="text-xs uppercase tracking-widest text-warmgray-400">FIELD CONFIDENCE</div>
+      <div className="flex justify-between gap-4 text-xs leading-5 text-warmgray-400">
         <span>{lastEvent.message}</span>
+        <span>{v + c + u} fields</span>
       </div>
-      <div className="h-2 w-full flex rounded-full overflow-hidden bg-gray-800">
-        <div style={{ width: `${(v / total) * 100}%` }} className="bg-green-500" />
-        <div style={{ width: `${(c / total) * 100}%` }} className="bg-yellow-500" />
-        <div style={{ width: `${(u / total) * 100}%` }} className="bg-gray-500" />
+      <div className="flex h-2.5 w-full overflow-hidden bg-warmgray-200">
+        <div style={{ width: `${(v / total) * 100}%` }} className="bg-forest" />
+        <div style={{ width: `${(c / total) * 100}%` }} className="bg-amber" />
+        <div style={{ width: `${(u / total) * 100}%` }} className="bg-warmgray-400" />
+      </div>
+      <div className="flex gap-4 text-xs uppercase tracking-[0.18em] text-warmgray-400">
+        <span className="text-forest">Validated {v}</span>
+        <span className="text-amber">Candidate {c}</span>
+        <span className="text-warmgray-400">Unknown {u}</span>
       </div>
     </div>
   )
