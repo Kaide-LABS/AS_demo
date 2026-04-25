@@ -139,6 +139,7 @@ async def _safe_extract(coro, agent_name, broadcaster):
         return ExtractionResult(agent_name=agent_name, extracted_fields={}, citations=[], validation_passed=False, validation_errors=[str(e)])
 
 async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile], broadcaster: TheaterBroadcaster) -> RadiantPersonaCalibration | PartialCalibrationResponse:
+    from validators import nia_corpus
     cost_tracker = CostTracker(broadcaster.job_id)
     set_active_cost_tracker(cost_tracker)
     logger.bind(trace_id=broadcaster.job_id, project_id=project_id)
@@ -153,6 +154,18 @@ async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile]
             if c.artifact_id == a.artifact_id:
                 a.artifact_type = c.artifact_type
 
+    # Best-effort: index this engagement's artifacts so extractors can retrieve
+    # focused chunks instead of dumping raw_text[:50000]. If indexing fails or
+    # is disabled, extractors fall back to the truncation path automatically.
+    engagement_source_id = None
+    if nia_corpus.EXTRACTION_ENABLED:
+        await broadcaster.emit("ingest", "Indexing corpus for retrieval...")
+        engagement_source_id = await nia_corpus.index_engagement_corpus(project_id, artifacts)
+        if engagement_source_id:
+            await broadcaster.emit("ingest", f"Corpus indexed (source={engagement_source_id[:8]}...)")
+        else:
+            await broadcaster.emit("ingest", "Corpus indexing skipped — extractors using direct text path")
+
     field_state = FieldStateEngine()
     plan = field_state.plan_extractions(manifest)
     await broadcaster.emit("field_state", f"{field_state.count_unknown()} fields required, 0 populated")
@@ -161,7 +174,7 @@ async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile]
     import time
     t0 = time.time()
     extractions = await asyncio.gather(
-        _safe_extract(segment_extractor(artifacts, plan, broadcaster), "segment_extractor", broadcaster),
+        _safe_extract(segment_extractor(artifacts, plan, broadcaster, engagement_source_id), "segment_extractor", broadcaster),
         _safe_extract(verbatim_distiller(artifacts, plan, broadcaster), "verbatim_distiller", broadcaster),
         _safe_extract(demographic_normalizer(artifacts, plan, broadcaster), "demographic_normalizer", broadcaster),
         _safe_extract(behavioral_extractor(artifacts, plan, broadcaster), "behavioral_extractor", broadcaster),
@@ -211,7 +224,10 @@ async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile]
 
     calibration.field_state_summary = field_state.export()
     await broadcaster.emit("validate", f"Final validation: {len(violations)} rules failed")
-    
+
+    if engagement_source_id:
+        await nia_corpus.teardown_engagement_corpus(engagement_source_id)
+
     total_cost = await cost_tracker.total()
     await broadcaster.emit("done", f"RadiantPersonaCalibration ready. Total Cost: ${total_cost:.4f}")
     return calibration
