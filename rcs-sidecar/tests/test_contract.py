@@ -9,7 +9,9 @@ from schemas import (
     Verbatim, SourceCitation, ArtifactType, FieldState,
     ExtractionResult, EvidenceNode, TriageManifest, ArtifactClassification,
 )
-from rules_engine import validate, CANONICAL_KEYS
+from rules_engine import validate
+from validators.semantic_validator import get_canonical_keys
+CANONICAL_KEYS = get_canonical_keys("behavioral")
 from evidence_merger import EvidenceMerger
 from field_state import FieldStateEngine
 
@@ -70,7 +72,8 @@ def test_schema_roundtrip_fixture():
     assert roundtripped.schema_version == "1.1.0"
 
 
-def test_rules_engine_rejects_bad_weights():
+@pytest.mark.asyncio
+async def test_rules_engine_rejects_bad_weights():
     # Use model_construct to bypass Pydantic's @field_validator
     s1 = _make_segment("s1", weight=0.5)
     s2 = _make_segment("s2", weight=0.35)
@@ -79,11 +82,12 @@ def test_rules_engine_rejects_bad_weights():
         segments=[s1, s2], global_provenance=[_make_citation()],
         coverage_gaps=[], field_state_summary={}, brand_constraints=[], campaign_benchmarks=[],
     )
-    _, violations = validate(cal)
+    _, violations = await validate(cal)
     assert any(v.rule_name == "weights_sum_to_one" for v in violations)
 
 
-def test_rules_engine_rejects_missing_citations():
+@pytest.mark.asyncio
+async def test_rules_engine_rejects_missing_citations():
     # Use model_construct to bypass Pydantic's min_length=1
     bad_attr = BehavioralAttribute.model_construct(
         key="media_consumption", value="x", confidence=0.1, citations=[],
@@ -91,18 +95,19 @@ def test_rules_engine_rejects_missing_citations():
     seg = _make_segment()
     seg.behavioral_attributes = [bad_attr]
     cal = _make_calibration(segments=[seg])
-    _, violations = validate(cal)
+    _, violations = await validate(cal)
     assert any(v.rule_name == "every_attribute_has_citation" for v in violations)
 
 
-def test_rules_engine_catches_pii():
+@pytest.mark.asyncio
+async def test_rules_engine_catches_pii():
     seg = _make_segment()
     seg.verbatims[0] = Verbatim(
         text="Contact john@example.com for more details about this research segment.",
         sentiment="neutral", citation=_make_citation(),
     )
     cal = _make_calibration(segments=[seg])
-    _, violations = validate(cal)
+    _, violations = await validate(cal)
     assert any(v.rule_name == "no_pii_in_verbatims" for v in violations)
 
 

@@ -1,0 +1,384 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Canonical attribute vocabulary for RadiantPersonaCalibration. Used by validators/semantic_validator.py to validate extracted attribute keys via Nia semantic search. Each entry includes aliases (lexical variants seen in real F100 research) which form the embedding surface for similarity matching.",
+  "match_threshold": 0.85,
+  "ambiguity_window": 0.05,
+  "families": {
+    "demographic": {
+      "applies_to": "PersonaSegment.demographic_attributes[].key, demographic_normalizer.field_name",
+      "keys": [
+        {
+          "canonical": "age_range",
+          "aliases": ["age", "age bracket", "age band", "age cohort", "age group", "generational cohort", "generation"],
+          "description": "Numeric age range or generational descriptor (e.g., 35-54, Gen X, Millennials)."
+        },
+        {
+          "canonical": "gender_distribution",
+          "aliases": ["gender", "gender split", "gender mix", "gender breakdown", "sex distribution", "male female ratio"],
+          "description": "Distribution of gender identities within the segment."
+        },
+        {
+          "canonical": "income_bracket",
+          "aliases": ["income", "income level", "income tier", "household income", "earnings bracket", "salary range", "annual income", "income band"],
+          "description": "Household or individual income range."
+        },
+        {
+          "canonical": "education_level",
+          "aliases": ["education", "educational attainment", "highest degree", "academic background", "qualification level", "schooling"],
+          "description": "Highest level of formal education completed."
+        },
+        {
+          "canonical": "geographic_region",
+          "aliases": ["geography", "region", "location", "geo", "country", "market", "territory", "metro area", "geographic distribution"],
+          "description": "Primary geographic location or market region."
+        },
+        {
+          "canonical": "occupation_category",
+          "aliases": ["occupation", "profession", "job category", "employment type", "industry sector", "role type", "professional category"],
+          "description": "Type of occupation or professional role."
+        },
+        {
+          "canonical": "household_composition",
+          "aliases": ["household type", "family structure", "household size", "marital status", "family composition", "living arrangement"],
+          "description": "Family or household structure."
+        },
+        {
+          "canonical": "ethnicity",
+          "aliases": ["ethnic background", "race", "racial identity", "cultural background", "ethnic identity"],
+          "description": "Ethnic or racial identification."
+        },
+        {
+          "canonical": "urbanicity",
+          "aliases": ["urban rural", "settlement type", "metro classification", "population density", "urban suburban rural"],
+          "description": "Urban, suburban, or rural classification."
+        },
+        {
+          "canonical": "language_primary",
+          "aliases": ["language", "primary language", "native language", "preferred language", "spoken language"],
+          "description": "Primary language used for communication."
+        },
+        {
+          "canonical": "employment_status",
+          "aliases": ["work status", "job status", "employed", "unemployed", "retired", "employment situation"],
+          "description": "Current employment situation."
+        },
+        {
+          "canonical": "investor_type",
+          "aliases": ["holder type", "investor classification", "investor category", "shareholder type", "fund type", "ownership type"],
+          "description": "Classification of investor (institutional, retail, passive index, ESG fund, etc.). Domain-specific to investor calibration."
+        }
+      ]
+    },
+    "psychographic": {
+      "applies_to": "PersonaSegment.psychographic_attributes[].key",
+      "keys": [
+        {
+          "canonical": "risk_tolerance",
+          "aliases": ["risk appetite", "risk preference", "risk aversion", "willingness to take risk", "risk profile"],
+          "description": "Disposition toward risk-taking versus risk avoidance."
+        },
+        {
+          "canonical": "trust_in_institutions",
+          "aliases": ["institutional trust", "trust in authority", "confidence in institutions", "institutional confidence", "skepticism of institutions"],
+          "description": "Level of trust in established institutions, governments, or organizations."
+        },
+        {
+          "canonical": "environmental_concern",
+          "aliases": ["sustainability mindset", "eco-consciousness", "green values", "environmental awareness", "climate concern", "ESG orientation"],
+          "description": "Degree of concern for environmental and sustainability issues."
+        },
+        {
+          "canonical": "health_consciousness",
+          "aliases": ["health awareness", "wellness orientation", "health-focused", "wellbeing priority", "health mindset"],
+          "description": "Priority placed on personal health and wellness."
+        },
+        {
+          "canonical": "political_engagement",
+          "aliases": ["political involvement", "civic engagement", "political activism", "political participation", "political awareness"],
+          "description": "Level of engagement with political issues and processes."
+        },
+        {
+          "canonical": "work_life_priority",
+          "aliases": ["work-life balance", "career-family balance", "lifestyle priority", "work-life orientation", "career vs personal"],
+          "description": "Balance between professional ambition and personal/family life."
+        },
+        {
+          "canonical": "community_involvement",
+          "aliases": ["community engagement", "civic participation", "local involvement", "community ties", "social involvement"],
+          "description": "Degree of engagement with local community and civic life."
+        },
+        {
+          "canonical": "education_aspiration",
+          "aliases": ["learning orientation", "intellectual curiosity", "growth mindset", "self-improvement drive", "educational ambition"],
+          "description": "Orientation toward continued learning and intellectual growth."
+        },
+        {
+          "canonical": "decision_making_style",
+          "aliases": ["decision style", "decision approach", "analytical vs intuitive", "deliberative", "decision-making pattern", "judgment style"],
+          "description": "Cognitive approach to making decisions (analytical, intuitive, deliberative, etc.)."
+        },
+        {
+          "canonical": "technology_adoption",
+          "aliases": ["tech adoption", "innovation adoption", "early adopter", "tech savviness", "technology orientation", "digital adoption curve"],
+          "description": "Position on the technology adoption curve."
+        },
+        {
+          "canonical": "financial_literacy",
+          "aliases": ["financial knowledge", "investment literacy", "financial sophistication", "money management skill", "investing knowledge"],
+          "description": "Level of financial knowledge and understanding."
+        },
+        {
+          "canonical": "openness_to_change",
+          "aliases": ["change orientation", "adaptability", "openness", "flexibility", "tolerance for ambiguity"],
+          "description": "Receptiveness to change and new experiences."
+        },
+        {
+          "canonical": "status_orientation",
+          "aliases": ["prestige seeking", "status consciousness", "social status drive", "luxury orientation", "status signaling"],
+          "description": "Importance placed on social status and prestige."
+        },
+        {
+          "canonical": "value_orientation",
+          "aliases": ["core values", "value system", "moral framework", "ethical orientation", "guiding values"],
+          "description": "Underlying value system guiding choices."
+        },
+        {
+          "canonical": "social_identity",
+          "aliases": ["group identity", "in-group affiliation", "tribal identity", "social belonging", "identity markers"],
+          "description": "Primary social or group identification."
+        }
+      ]
+    },
+    "behavioral": {
+      "applies_to": "PersonaSegment.behavioral_attributes[].key",
+      "keys": [
+        {
+          "canonical": "media_consumption",
+          "aliases": ["media usage", "content consumption", "media habits", "media diet", "consumption patterns"],
+          "description": "Patterns of media and content consumption."
+        },
+        {
+          "canonical": "information_sources",
+          "aliases": ["news sources", "trusted sources", "info channels", "where they get information", "primary sources", "research sources"],
+          "description": "Primary sources used for news and information."
+        },
+        {
+          "canonical": "content_consumption_format",
+          "aliases": ["preferred format", "content format preference", "format preference", "long-form vs short-form", "video vs text", "content medium"],
+          "description": "Preferred format of content consumption (video, text, audio, long-form, short-form)."
+        },
+        {
+          "canonical": "social_media_usage",
+          "aliases": ["social media", "social platforms", "social media behavior", "platform usage", "social network activity"],
+          "description": "Patterns of social media platform usage."
+        },
+        {
+          "canonical": "digital_savviness",
+          "aliases": ["digital fluency", "digital literacy", "tech proficiency", "online competence", "digital skills"],
+          "description": "Level of comfort and skill with digital tools."
+        },
+        {
+          "canonical": "purchase_frequency",
+          "aliases": ["buying frequency", "transaction frequency", "purchase cadence", "buying rhythm", "spending frequency"],
+          "description": "How often the segment makes purchases in the relevant category."
+        },
+        {
+          "canonical": "price_sensitivity",
+          "aliases": ["price elasticity", "value consciousness", "deal seeking", "price awareness", "cost sensitivity"],
+          "description": "Sensitivity to price changes and willingness to pay."
+        },
+        {
+          "canonical": "brand_affinity",
+          "aliases": ["brand loyalty", "brand attachment", "brand preference", "brand connection", "brand favorability"],
+          "description": "Strength of attachment or preference for specific brands."
+        },
+        {
+          "canonical": "channel_preference",
+          "aliases": ["preferred channel", "buying channel", "shopping channel", "communication channel", "engagement channel"],
+          "description": "Preferred channels for purchasing or engagement."
+        },
+        {
+          "canonical": "engagement_frequency",
+          "aliases": ["interaction frequency", "touch frequency", "engagement cadence", "contact rhythm", "engagement rate"],
+          "description": "Frequency of engagement with the brand or product."
+        },
+        {
+          "canonical": "research_behavior",
+          "aliases": ["pre-purchase research", "due diligence behavior", "shopping research", "research depth", "evaluation behavior"],
+          "description": "How extensively the segment researches before decisions."
+        },
+        {
+          "canonical": "loyalty_behavior",
+          "aliases": ["retention behavior", "repeat purchase", "switching propensity", "churn risk", "loyalty pattern"],
+          "description": "Tendency toward repeat purchase or switching."
+        },
+        {
+          "canonical": "advocacy_propensity",
+          "aliases": ["recommendation likelihood", "word of mouth", "referral behavior", "promoter behavior", "advocacy rate"],
+          "description": "Likelihood to recommend or advocate for a brand."
+        },
+        {
+          "canonical": "holding_period",
+          "aliases": ["investment horizon", "time horizon", "holding duration", "investment timeframe", "ownership duration"],
+          "description": "Typical duration of investment holdings. Domain-specific to investor calibration."
+        },
+        {
+          "canonical": "engagement_with_ir_communications",
+          "aliases": ["IR engagement", "investor relations engagement", "earnings call attendance", "proxy participation", "disclosure engagement", "annual meeting engagement"],
+          "description": "Engagement with investor relations and corporate disclosure communications. Domain-specific to investor calibration."
+        }
+      ]
+    },
+    "brand_constraint": {
+      "applies_to": "BrandConstraint.constraint_type and BrandConstraint.description vocabulary",
+      "keys": [
+        {
+          "canonical": "tone_authoritative",
+          "aliases": ["authoritative", "expert", "commanding", "confident", "assertive", "knowledgeable"],
+          "description": "Tone conveying expertise and authority."
+        },
+        {
+          "canonical": "tone_approachable",
+          "aliases": ["approachable", "warm", "friendly", "conversational", "welcoming", "accessible", "relatable"],
+          "description": "Tone conveying warmth and accessibility."
+        },
+        {
+          "canonical": "tone_aspirational",
+          "aliases": ["aspirational", "inspiring", "motivational", "uplifting", "ambitious"],
+          "description": "Tone evoking aspiration or inspiration."
+        },
+        {
+          "canonical": "tone_pragmatic",
+          "aliases": ["pragmatic", "practical", "straightforward", "no-nonsense", "matter-of-fact", "direct"],
+          "description": "Tone emphasizing practicality and directness."
+        },
+        {
+          "canonical": "tone_empathetic",
+          "aliases": ["empathetic", "compassionate", "understanding", "supportive", "caring"],
+          "description": "Tone conveying empathy and emotional understanding."
+        },
+        {
+          "canonical": "tone_playful",
+          "aliases": ["playful", "lighthearted", "witty", "humorous", "fun", "irreverent"],
+          "description": "Tone conveying playfulness or humor."
+        },
+        {
+          "canonical": "tone_serious",
+          "aliases": ["serious", "earnest", "grave", "formal", "solemn"],
+          "description": "Tone conveying seriousness or gravity."
+        },
+        {
+          "canonical": "voice_active",
+          "aliases": ["active voice", "active construction", "direct voice"],
+          "description": "Use active rather than passive voice."
+        },
+        {
+          "canonical": "voice_inclusive",
+          "aliases": ["inclusive language", "gender-neutral", "non-discriminatory", "inclusive voice", "accessibility-aware"],
+          "description": "Use inclusive, non-discriminatory language."
+        },
+        {
+          "canonical": "voice_jargon_free",
+          "aliases": ["plain language", "no jargon", "accessible language", "non-technical", "lay terms"],
+          "description": "Avoid technical jargon."
+        },
+        {
+          "canonical": "guardrail_no_competitor_mentions",
+          "aliases": ["no competitor names", "competitor restriction", "competitor mention forbidden", "no naming competitors"],
+          "description": "Do not name or reference competitors."
+        },
+        {
+          "canonical": "guardrail_no_unsupported_claims",
+          "aliases": ["no unsupported claims", "evidence-required", "no superlatives without proof", "claim substantiation"],
+          "description": "Claims must be substantiated by evidence."
+        },
+        {
+          "canonical": "guardrail_no_political_content",
+          "aliases": ["politically neutral", "no political stances", "apolitical", "no partisan content"],
+          "description": "Avoid political stances or partisan content."
+        },
+        {
+          "canonical": "guardrail_disclosure_required",
+          "aliases": ["disclosure language", "regulatory disclosure", "compliance language", "required disclaimer"],
+          "description": "Required compliance or regulatory disclosure language."
+        },
+        {
+          "canonical": "forbidden_term_generic",
+          "aliases": ["forbidden words", "banned terms", "do not use", "prohibited language", "blacklisted phrases"],
+          "description": "Generic forbidden language category for client-specific term lists."
+        }
+      ]
+    },
+    "campaign_benchmark": {
+      "applies_to": "CampaignBenchmark.metric_name",
+      "keys": [
+        {
+          "canonical": "brand_awareness_pct",
+          "aliases": ["brand awareness", "unaided awareness", "aided awareness", "brand recognition", "top-of-mind awareness"],
+          "description": "Percentage of audience aware of the brand."
+        },
+        {
+          "canonical": "purchase_intent_pct",
+          "aliases": ["purchase intent", "buying intent", "intent to purchase", "consideration", "intent score"],
+          "description": "Percentage of audience expressing intent to purchase."
+        },
+        {
+          "canonical": "net_promoter_score",
+          "aliases": ["NPS", "net promoter", "promoter score", "recommendation score"],
+          "description": "Net Promoter Score."
+        },
+        {
+          "canonical": "email_open_rate",
+          "aliases": ["open rate", "email opens", "email engagement rate", "open percentage"],
+          "description": "Email campaign open rate."
+        },
+        {
+          "canonical": "email_click_through_rate",
+          "aliases": ["CTR", "click-through rate", "click rate", "email clicks"],
+          "description": "Email click-through rate."
+        },
+        {
+          "canonical": "social_engagement_rate",
+          "aliases": ["social engagement", "engagement rate", "interaction rate", "social interaction rate"],
+          "description": "Social media engagement rate."
+        },
+        {
+          "canonical": "video_completion_rate",
+          "aliases": ["VTR", "view-through rate", "video completion", "completion rate", "video watch rate"],
+          "description": "Video completion or view-through rate."
+        },
+        {
+          "canonical": "share_of_voice_pct",
+          "aliases": ["share of voice", "SOV", "voice share", "media share"],
+          "description": "Brand share of voice in category conversation."
+        },
+        {
+          "canonical": "consideration_pct",
+          "aliases": ["consideration rate", "in consideration set", "shortlist rate"],
+          "description": "Percentage including the brand in their consideration set."
+        },
+        {
+          "canonical": "preference_pct",
+          "aliases": ["brand preference", "preference rate", "first choice rate"],
+          "description": "Percentage preferring the brand over alternatives."
+        },
+        {
+          "canonical": "proxy_vote_participation_pct",
+          "aliases": ["proxy participation", "annual meeting attendance", "vote participation rate", "shareholder voting rate"],
+          "description": "Percentage of shareholders participating in proxy votes. Domain-specific to investor calibration."
+        },
+        {
+          "canonical": "earnings_call_attendance",
+          "aliases": ["earnings call participation", "call attendance", "investor call attendance", "quarterly call participation"],
+          "description": "Attendance or engagement with quarterly earnings calls. Domain-specific to investor calibration."
+        }
+      ]
+    }
+  },
+  "validation_notes": {
+    "match_threshold_rationale": "0.85 chosen for cosine similarity over embedding space. Below this, lexical drift becomes too large (e.g., 'authoritative' vs 'commanding' should match; 'authoritative' vs 'serious' should not).",
+    "ambiguity_window_rationale": "0.05 — if two canonical keys both score above threshold and within 0.05 of each other, treat as ambiguous and flag for human review rather than auto-mapping.",
+    "fallback_threshold_rationale": "difflib.SequenceMatcher with 0.7 ratio. Stricter than the semantic threshold because lexical similarity is a weaker signal than embedding similarity.",
+    "domain_specific_keys": "Several keys (investor_type, holding_period, engagement_with_ir_communications, proxy_vote_participation_pct, earnings_call_attendance) are tuned to the AS Radiant investor-calibration use case visible in fixture data. Generalize the vocabulary per-engagement when calibrating non-investor audiences."
+  }
+}

@@ -24,7 +24,7 @@ from agents.demographic_normalizer import demographic_normalizer
 from agents.behavioral_extractor import behavioral_extractor
 from agents.brand_tone_extractor import brand_tone_extractor
 from agents.campaign_benchmark_extractor import campaign_benchmark_extractor
-from agents.client import generate_structured, generate_text, MODEL_PRO, client
+from agents.client import generate_structured, generate_text, MODEL_PRO, MODEL_FLASH, client, set_active_cost_tracker
 
 SYNTHESIS_SYSTEM_PROMPT = """You are an enterprise audience calibration synthesizer.
 You will receive a merged evidence graph from multiple extraction agents.
@@ -97,10 +97,10 @@ async def synthesis_agent(
     )
 
     result, usage, _ = await generate_structured(
-        model=MODEL_PRO,
+        model=MODEL_FLASH,
         contents=contents,
         response_schema=RadiantPersonaCalibration,
-        thinking_level=types.ThinkingLevel.HIGH,
+        thinking_level=types.ThinkingLevel.LOW,
         system_instruction=SYNTHESIS_SYSTEM_PROMPT,
     )
     await broadcaster.emit('synthesize', 'Synthesis completed', meta=usage)
@@ -140,6 +140,7 @@ async def _safe_extract(coro, agent_name, broadcaster):
 
 async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile], broadcaster: TheaterBroadcaster) -> RadiantPersonaCalibration | PartialCalibrationResponse:
     cost_tracker = CostTracker(broadcaster.job_id)
+    set_active_cost_tracker(cost_tracker)
     logger.bind(trace_id=broadcaster.job_id, project_id=project_id)
     await broadcaster.emit("ingest", f"Parsing {len(uploads)} files...")
     artifacts = await asyncio.gather(*[detect_and_parse(f) for f in uploads])
@@ -191,13 +192,13 @@ async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile]
             field_states=field_state.export(),
         )
 
-    calibration, violations = validate(draft)
+    calibration, violations = await validate(draft)
     field_state.update_from_validation(calibration, violations)
-    retry_budget = 2
+    retry_budget = 0  # demo: skip targeted-retry loop to keep latency under control
     while violations and retry_budget > 0:
         await broadcaster.emit("validate", f"Validation failed: {len(violations)} violations. Retrying...")
         calibration = await targeted_retry(calibration, violations, broadcaster)
-        calibration, violations = validate(calibration)
+        calibration, violations = await validate(calibration)
         field_state.update_from_validation(calibration, violations)
         retry_budget -= 1
 

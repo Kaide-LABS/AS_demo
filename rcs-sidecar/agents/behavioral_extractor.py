@@ -5,7 +5,9 @@ from theater import TheaterBroadcaster
 from agents.client import generate_structured, MODEL_FLASH, client
 from agents._citations import coerce_citations
 from google.genai import types
-from rules_engine import CANONICAL_KEYS
+from validators.semantic_validator import get_canonical_keys
+
+CANONICAL_KEYS = get_canonical_keys("behavioral")
 
 AGENT_NAME = "behavioral_extractor"
 logger = structlog.get_logger()

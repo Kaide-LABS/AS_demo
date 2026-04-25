@@ -1,17 +1,10 @@
 import re
 import math
-from typing import List, Tuple
+import inspect
+from typing import Awaitable, Callable, List, Tuple, Union
 from schemas import RadiantPersonaCalibration, RuleViolation
+from validators.semantic_validator import validate_canonical
 
-CANONICAL_KEYS = {
-    "media_consumption", "information_sources", "content_consumption_format",
-    "social_media_usage", "digital_savviness",
-    "purchase_frequency", "price_sensitivity", "brand_affinity",
-    "channel_preference", "risk_tolerance", "trust_in_institutions",
-    "environmental_concern", "health_consciousness", "political_engagement",
-    "work_life_priority", "community_involvement", "education_aspiration",
-    "decision_making_style", "technology_adoption", "financial_literacy",
-}
 
 def weights_sum_to_one(calibration: RadiantPersonaCalibration) -> List[RuleViolation]:
     violations = []
@@ -50,19 +43,85 @@ def verbatims_per_segment_minimum(calibration: RadiantPersonaCalibration) -> Lis
             ))
     return violations
 
-def canonical_attribute_vocabulary(calibration: RadiantPersonaCalibration) -> List[RuleViolation]:
-    violations = []
+
+_FAMILY_FOR_BUCKET = {
+    "demographic_attributes": "demographic",
+    "psychographic_attributes": "psychographic",
+    "behavioral_attributes": "behavioral",
+}
+
+
+def _add_coverage_gap(calibration: RadiantPersonaCalibration, msg: str) -> None:
+    """Append a soft warning to coverage_gaps without violating the contract."""
+    if calibration.coverage_gaps is None:
+        calibration.coverage_gaps = []
+    if msg not in calibration.coverage_gaps:
+        calibration.coverage_gaps.append(msg)
+
+
+async def canonical_attribute_vocabulary(
+    calibration: RadiantPersonaCalibration,
+) -> List[RuleViolation]:
+    """Family-scoped semantic validation of attribute keys.
+
+    Walks each segment's three attribute buckets, validating each .key against
+    the canonical vocabulary for its family. Replaces the old hardcoded
+    CANONICAL_KEYS check, which mistakenly flagged demographic keys with a
+    behavioral-only set.
+    """
+    violations: List[RuleViolation] = []
     for s_idx, seg in enumerate(calibration.segments):
-        attrs = seg.demographic_attributes + seg.psychographic_attributes + seg.behavioral_attributes
-        for a_idx, attr in enumerate(attrs):
-            if attr.key not in CANONICAL_KEYS:
-                violations.append(RuleViolation(
-                    rule_name="canonical_attribute_vocabulary",
-                    field_path=f"segments[{s_idx}].attributes[{a_idx}].key",
-                    segment_id=seg.segment_id,
-                    description=f"Key '{attr.key}' not in CANONICAL_KEYS."
-                ))
+        for bucket_name, family in _FAMILY_FOR_BUCKET.items():
+            bucket = getattr(seg, bucket_name, []) or []
+            for a_idx, attr in enumerate(bucket):
+                result = await validate_canonical(attr.key, family)
+                field_path = f"segments[{s_idx}].{bucket_name}[{a_idx}].key"
+                if result.status == "valid":
+                    continue
+                if result.status == "non_canonical":
+                    violations.append(RuleViolation(
+                        rule_name="canonical_attribute_vocabulary",
+                        field_path=field_path,
+                        segment_id=seg.segment_id,
+                        description=(
+                            f"Key '{attr.key}' is not a canonical {family} key "
+                            f"(top match: {result.canonical_match!r}, score={result.score:.2f})."
+                        ),
+                    ))
+                elif result.status == "ambiguous":
+                    candidates = ", ".join(
+                        f"{c}({s:.2f})" for c, s in zip(result.candidates, result.candidate_scores)
+                    )
+                    violations.append(RuleViolation(
+                        rule_name="canonical_attribute_vocabulary",
+                        field_path=field_path,
+                        segment_id=seg.segment_id,
+                        description=(
+                            f"Key '{attr.key}' is ambiguous between {family} canonicals: "
+                            f"{candidates}. Pick one canonical form."
+                        ),
+                    ))
+                elif result.status == "fallback_valid":
+                    _add_coverage_gap(
+                        calibration,
+                        (
+                            f"Semantic validator fell back to lexical match for "
+                            f"'{attr.key}' in {family} (matched {result.canonical_match!r}, "
+                            f"reason={result.fallback_reason})."
+                        ),
+                    )
+                elif result.status == "fallback_non_canonical":
+                    violations.append(RuleViolation(
+                        rule_name="canonical_attribute_vocabulary",
+                        field_path=field_path,
+                        segment_id=seg.segment_id,
+                        description=(
+                            f"Key '{attr.key}' is not a canonical {family} key "
+                            f"(lexical fallback, reason={result.fallback_reason})."
+                        ),
+                    ))
     return violations
+
 
 def confidence_monotonic_with_sources(calibration: RadiantPersonaCalibration) -> List[RuleViolation]:
     violations = []
@@ -84,7 +143,7 @@ def no_pii_in_verbatims(calibration: RadiantPersonaCalibration) -> List[RuleViol
     email_re = re.compile(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}')
     phone_re = re.compile(r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b')
     ssn_re = re.compile(r'\b\d{3}-\d{2}-\d{4}\b')
-    
+
     for s_idx, seg in enumerate(calibration.segments):
         for v_idx, verb in enumerate(seg.verbatims):
             text = verb.text
@@ -115,30 +174,67 @@ def provenance_completeness(calibration: RadiantPersonaCalibration) -> List[Rule
             ))
     return violations
 
-def brand_constraints_have_examples(calibration: RadiantPersonaCalibration) -> List[RuleViolation]:
-    violations = []
+
+async def brand_constraints_have_examples(
+    calibration: RadiantPersonaCalibration,
+) -> List[RuleViolation]:
+    """Structural check + soft semantic check on each constraint's description.
+
+    Hard violation: a constraint with zero examples (existing behavior).
+    Soft warning: a constraint description that does not match any canonical
+    brand_constraint vocabulary entry. Soft warnings land in coverage_gaps
+    rather than violations because brand-language drift is expected.
+    """
+    violations: List[RuleViolation] = []
     for idx, bc in enumerate(calibration.brand_constraints):
         if not bc.examples:
             violations.append(RuleViolation(
                 rule_name="brand_constraints_have_examples",
                 field_path=f"brand_constraints[{idx}]",
-                description="Brand constraint has 0 examples."
+                description="Brand constraint has 0 examples.",
             ))
+            continue
+        # Soft semantic augmentation
+        try:
+            result = await validate_canonical(bc.description, family="brand_constraint")
+        except Exception:
+            continue
+        if result.status in ("non_canonical", "fallback_non_canonical"):
+            _add_coverage_gap(
+                calibration,
+                (
+                    f"brand_constraints[{idx}].description does not match any "
+                    f"canonical brand_constraint key (top={result.canonical_match!r}, "
+                    f"score={result.score:.2f}). Consider rewording."
+                ),
+            )
     return violations
 
-RULES = [
+
+SyncRule = Callable[[RadiantPersonaCalibration], List[RuleViolation]]
+AsyncRule = Callable[[RadiantPersonaCalibration], Awaitable[List[RuleViolation]]]
+Rule = Union[SyncRule, AsyncRule]
+
+RULES: list[Rule] = [
     weights_sum_to_one,
     every_attribute_has_citation,
     verbatims_per_segment_minimum,
-    canonical_attribute_vocabulary,
+    canonical_attribute_vocabulary,           # async
     confidence_monotonic_with_sources,
     no_pii_in_verbatims,
     provenance_completeness,
-    brand_constraints_have_examples,
+    brand_constraints_have_examples,          # async (augmented)
 ]
 
-def validate(calibration: RadiantPersonaCalibration) -> Tuple[RadiantPersonaCalibration, List[RuleViolation]]:
-    violations = []
+
+async def validate(
+    calibration: RadiantPersonaCalibration,
+) -> Tuple[RadiantPersonaCalibration, List[RuleViolation]]:
+    """Run all rules. Async because some rules call out to Nia."""
+    violations: List[RuleViolation] = []
     for rule in RULES:
-        violations.extend(rule(calibration))
+        if inspect.iscoroutinefunction(rule):
+            violations.extend(await rule(calibration))
+        else:
+            violations.extend(rule(calibration))
     return calibration, violations
