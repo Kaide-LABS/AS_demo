@@ -10,3 +10,4 @@ build/
 .claude/
 *.tsbuildinfo
 rcs-sidecar/validators/nia_sources.json
+_chunk_diag*.json

@@ -14,7 +14,7 @@ type PreviewState =
   | { type: 'json'; content: string }
   | { type: 'csv'; headers: string[]; rows: string[][]; totalRows: number }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080'
 
 function formatSize(sizeBytes: number) {
   if (sizeBytes < 1024 * 1024) {
