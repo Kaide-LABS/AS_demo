@@ -186,3 +186,65 @@ Trigger condition for re-engagement (unchanged): prospect uploads a
 corpus exceeding 50KB per artifact; AS pilot feedback indicates
 truncation-induced hallucinations; new agents are added that need
 focused retrieval.
+
+## F100 Stress Test — Unilever (2026-04-26)
+
+Sunday-afternoon validation against real-corpus scale: Unilever's most
+recent 20-F (13,935,009 chars), plus two recent 6-Ks (251,962 and
+13,997 chars). Total raw text: ~14 million characters across 3 files.
+
+### Smoke test (demo fixtures) — Stage 1, PASS
+4 segs / 20 verbs / 5 demos baseline → 4 / 20 / **6 demos** Nia.
+Story-2 demographic win from Saturday preserved at small-corpus scale.
+137s total. Zero `nia_corpus_index_error` warnings. Confirms Saturday
+night's smoke failure was transient.
+
+### F100 stress test — Stage 3, MIXED RESULT
+
+| Metric                | Truncation | Nia  | Delta |
+|-----------------------|-----------:|-----:|------:|
+| Segments              |          2 |    2 |    0  |
+| Verbatims             |         10 |   10 |    0  |
+| Demographic attrs     |          0 |    2 |   +2  |
+| Behavioral attrs      |          3 |    3 |    0  |
+| Psychographic attrs   |          0 |    2 |   +2  |
+| Latency               |      30.4s | 71.2s| +135% |
+
+The Nia run hit `nia_corpus_index_error` during engagement indexing.
+Most likely cause: the 13.9MB 20-F file exceeds Nia `/v2/sources`
+inline-payload limits — `validators/nia_corpus.py` builds the request
+body in memory and POSTs the entire file content as a `files[].content`
+JSON string. Nia's endpoint rejects or times out on bodies of this size.
+
+When indexing fails, `engagement_source_id` is `None`, and all three
+templated extractors fall back to truncation (designed safety
+behavior — pipeline never crashes). So both Nia and truncation runs
+effectively ran in truncation mode for the 20-F.
+
+The +2 demographic and +2 psychographic deltas above therefore cannot
+be cleanly attributed to Nia retrieval. They are most likely Gemini
+non-determinism, not architecture signal. **Not a Story-2 win at F100
+scale on this corpus shape.**
+
+### Open work (v1.1)
+
+- Chunk large artifacts before sending to `/v2/sources`. Either split
+  the 20-F into N body sub-files (one per Item or section), or stream
+  chunks via Nia's documented multi-part upload API if one exists.
+  Without this, any artifact larger than ~10MB can't be indexed.
+- Re-run the F100 stress test with chunked indexing.
+- The 5-min SLA is comfortable at small scale; latency at F100 scale
+  unknown until indexing succeeds.
+
+### Decision impact
+
+The recorded scale demo for the AS pilot conversation should NOT use
+Nia mode on F100-shape corpora today. Either:
+
+1. Demo the small-corpus Story-2 win (+33% demo fields on the existing
+   investor-demo fixture set) and frame F100 scale as v1.1; OR
+2. Demo truncation-only on F100 fixtures, framing the Nia layer as
+   "infrastructure ready, indexing path needs chunked-upload work
+   before flipping the flag at this scale."
+
+Default to (1) — the existing demo already tells the cleaner story.
