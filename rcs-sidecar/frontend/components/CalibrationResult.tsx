@@ -64,12 +64,12 @@ export default function CalibrationResult({ calibration }: { calibration: Calibr
               <button
                 type="button"
                 onClick={() => setOpen(isOpen ? null : id)}
-                className="flex w-full items-baseline justify-between px-5 py-4 text-left transition hover:bg-[#F3EFE8]"
+                className="flex w-full items-baseline justify-between gap-4 px-5 py-4 text-left transition hover:bg-[#F3EFE8]"
               >
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="font-serif text-2xl text-ink">{s.label || id}</div>
                   {s.description && (
-                    <div className="mt-1 max-w-2xl text-sm leading-relaxed text-warmgray-400">
+                    <div className="mt-1 text-sm leading-relaxed text-warmgray-400">
                       {s.description}
                     </div>
                   )}
@@ -224,8 +224,8 @@ function FlaggedForReview({ gaps }: { gaps: string[] }) {
                   ×{g.count}
                 </span>
               )}
-              <div className="text-ink">
-                <div>{text}</div>
+              <div className="min-w-0 flex-1 text-ink">
+                <div className="break-words">{text}</div>
                 {subtitle && (
                   <div className="mt-1 text-xs leading-relaxed text-warmgray-400">{subtitle}</div>
                 )}

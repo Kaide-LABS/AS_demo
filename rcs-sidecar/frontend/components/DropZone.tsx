@@ -12,13 +12,13 @@ export default function DropZone({ files, setFiles }: { files: File[], setFiles:
   }, [files, setFiles])
 
   return (
-    <div className="flex flex-1 flex-col space-y-5">
+    <div className="flex flex-col space-y-5">
       <div
         onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
         onDragLeave={() => setIsDragOver(false)}
         onDrop={onDrop}
         style={isDragOver ? { boxShadow: '0 0 0 6px rgba(232, 93, 61, 0.12)' } : undefined}
-        className={`flex min-h-[340px] flex-1 items-center justify-center border-2 border-dashed bg-transparent px-8 py-14 text-center transition ${
+        className={`flex min-h-[340px] items-center justify-center border-2 border-dashed bg-transparent px-8 py-14 text-center transition ${
           isDragOver ? 'border-coral' : 'border-warmgray-200 hover:border-warmgray-400'
         }`}
       >

@@ -90,8 +90,8 @@ export default function Page() {
             </div>
           </div>
 
-          <form onSubmit={handleCalibrate} className="flex flex-1 flex-col justify-between pt-14 lg:pt-20">
-            <div className="max-w-xl space-y-8">
+          <form onSubmit={handleCalibrate} className="flex flex-1 flex-col pt-14 lg:pt-20">
+            <div className="flex max-w-xl flex-col space-y-8">
               <div className="text-xs uppercase tracking-widest text-warmgray-400">STEP 2 — CALIBRATE AUDIENCE</div>
               <DropZone files={files} setFiles={setFiles} />
               <SampleTemplates onUpload={handleUpload} />
