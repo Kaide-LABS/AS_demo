@@ -248,3 +248,71 @@ Nia mode on F100-shape corpora today. Either:
    before flipping the flag at this scale."
 
 Default to (1) — the existing demo already tells the cleaner story.
+
+### Bug-fix attempt (2026-04-26 evening) — REVERTED
+
+Diagnosed the failure mode and attempted a chunked-upload fix. Reverted
+because end-to-end gate didn't pass.
+
+**What the failure actually is.** Standalone bisect against
+`POST /v2/sources` with the Unilever 20-F:
+
+| Inline payload | HTTP | Time |
+|---:|:---:|---:|
+| 200 KB | 200 ✓ | 3.3s |
+| 1 MB   | 200 ✓ | 5.9s |
+| 4 MB   | 200 ✓ | 15.7s |
+| 9 MB   | **400** | 33.1s — `"No valid files after filtering. Check for binary files, path issues, or ignored patterns."` |
+
+The 14 MB inline body is rejected by Nia's server-side ingestion filter
+(misleadingly worded as a binary-file message; it's a size-class trip).
+
+**What was tried.**
+1. `_split_into_parts()`: split any artifact whose UTF-8 body exceeded 4 MB
+   into ~3.5 MB parts named `<artifact_id>_partN.txt`.
+2. `_filename_to_artifact_id()`: extended to strip the `_partN` suffix on
+   retrieval so chunks map back to the parent artifact.
+3. Upload-POST timeout extended from a fixed 30s to
+   `max(120s, 60s + total_bytes / (2 MB/s))` since the chunked POST itself
+   takes ~50s for a 14 MB body.
+4. `NIA_INDEX_TIMEOUT` raised to 900s.
+
+The standalone POST then succeeded (HTTP 200, source_id returned in 53s).
+
+**Why it still failed end-to-end.** The chunked POST is accepted, but
+Nia's actual indexing of the 4 parts (~14 MB total) does not flip the
+source's status to `indexed` within 15 minutes. The pipeline polls and
+times out. v4 stress run on Unilever:
+
+| Metric | Truncation baseline | Nia v4 |
+|---:|:---:|:---:|
+| Segments | 2 | 3 |
+| Verbatims | 10 | 15 |
+| Demos | 0 | 0 |
+| Behavioral | 3 | 4 |
+| Psychographic | 0 | 3 |
+| Latency | 30.4s | **1011s (16.9 min)** |
+| Index status | n/a | `nia_corpus_index_timeout` |
+
+The Nia-vs-baseline deltas above are most likely Gemini stochasticity
+(when polling times out, all extractors fall back to truncation, so
+both runs effectively ran the 20-F in truncation mode). Latency of 16.9
+minutes also blows past the 5-minute SLA the small-corpus demo holds.
+
+**Honest verdict.** The chunked-upload code change is necessary but not
+sufficient. Nia's *indexing throughput* on a 14 MB corpus is the real
+bottleneck, and it's outside our code. Either:
+
+- Nia adds a faster-path or a streaming upload API (vendor-side change).
+- We chunk artifacts more aggressively into many smaller sources (one
+  per logical section or page range), but that fragments retrieval and
+  defeats the per-engagement-corpus design.
+- We pre-index well-known artifacts ahead of time and cache by content
+  hash; only fresh artifacts pay the indexing cost.
+
+For the AS pilot demo: stays Path 1 — small-corpus Story 2 win is the
+narrative; the F100 stress test is the v1.1 conversation.
+
+The revert is on `validators/nia_corpus.py` only; the chunking helpers
+and timeout-scaling logic are documented above so a future v1.1 attempt
+doesn't have to rediscover the failure shape.
