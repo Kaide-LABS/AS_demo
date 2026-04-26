@@ -100,7 +100,7 @@ export default function Page() {
             </div>
 
             {calibration ? (
-              <LoadButton calibration={calibration} durationMs={durationMs} />
+              <LoadButton calibration={calibration} durationMs={durationMs} artifactCount={files.length} />
             ) : (
               <button
                 type="submit"

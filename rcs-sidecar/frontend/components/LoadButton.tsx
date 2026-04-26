@@ -10,16 +10,32 @@ const fmtDuration = (ms: number | null | undefined) => {
   return `${m}m ${s}s`
 }
 
+const EXTRACTOR_COUNT = 6 // segment, verbatim, demographic, behavioral, brand_tone, campaign_benchmark
+
 export default function LoadButton({
   calibration,
   durationMs,
+  artifactCount,
 }: {
   calibration: any
   durationMs?: number | null
+  artifactCount?: number
 }) {
   const [toast, setToast] = useState(false)
   const segmentCount = calibration.segments?.length || 0
   const duration = fmtDuration(durationMs)
+
+  const summary = (calibration.field_state_summary || {}) as Record<string, string>
+  const totalFields = Object.keys(summary).length
+  const validatedCount = Object.values(summary).filter((v) => v === 'validated').length
+  const facts: string[] = []
+  if (artifactCount && artifactCount > 0) {
+    facts.push(`${artifactCount} artifact${artifactCount === 1 ? '' : 's'}`)
+  }
+  facts.push(`${EXTRACTOR_COUNT} extraction agents`)
+  if (totalFields > 0) {
+    facts.push(`${validatedCount} of ${totalFields} fields validated`)
+  }
 
   useEffect(() => {
     if (!toast) return
@@ -40,7 +56,7 @@ export default function LoadButton({
             Calibrated in {duration}
           </div>
           <div className="mt-1 text-xs uppercase tracking-widest text-warmgray-400">
-            Manual calibration · typically 3–5 days
+            {facts.join(' · ')}
           </div>
         </div>
       )}
