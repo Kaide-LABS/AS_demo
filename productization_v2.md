@@ -316,3 +316,58 @@ narrative; the F100 stress test is the v1.1 conversation.
 The revert is on `validators/nia_corpus.py` only; the chunking helpers
 and timeout-scaling logic are documented above so a future v1.1 attempt
 doesn't have to rediscover the failure shape.
+
+## v1.1 — Retrieval layer migrated Nia → ChromaDB (SHIPPED)
+
+**Status:** Shipped on `main` (this commit). Replaces `validators/nia_corpus.py`
+with `retrieval/chroma_corpus.py`. Same async surface
+(`index_engagement_corpus` / `query_engagement_corpus` /
+`teardown_engagement_corpus`); pipeline + segment/verbatim/demographic agents
+import the new module under the existing `nia_corpus` alias so call-sites are
+unchanged. Feature flag name `RCS_NIA_EXTRACTION_ENABLED` preserved for env
+continuity (synonym `RCS_RETRIEVAL_ENABLED` accepted).
+
+**What this resolves:** the Nia `nia_corpus_index_timeout` / inline-payload
+ceiling that blocked the F100 stress test. Indexing now runs locally against
+a `chromadb.PersistentClient` at `data/chromadb/`; embeddings come from
+Gemini `gemini-embedding-001`. No remote indexing throughput limit.
+
+**Smoke result (Unilever 20-F, this commit):**
+
+| Metric                          | Nia v4 (last attempt) | ChromaDB |
+|---------------------------------|----------------------:|---------:|
+| Index outcome                   | `nia_corpus_index_timeout` (>15 min) | `indexed` in 25.2s |
+| Corpus chars (post HTML strip)  | 1.0M | 1.0M |
+| Per-agent query latency         | n/a (fell back to truncation) | 1.7–2.7s |
+| Top-k chunks per agent          | n/a | 10 / 10 / 10 |
+
+Smoke harness: `rcs-sidecar/tests/smoke_unilever_chroma.py`. Runs against
+the gitignored fixture set `rcs-sidecar/fixtures/stress_test_f100/unilever/`.
+
+**Validator-side Nia is unchanged.** `validators/semantic_validator.py` and
+`validators/seed_nia.py` still query Nia against `canonical_vocabulary.json`
+(67 keys, 5 families, ~350 aliases). That corpus is small, the Nia reranker
+works fine for it, and the email/video pitch language about "Nia" remains
+accurate in that scope.
+
+## Architectural decisions
+
+### Why ChromaDB for the retrieval layer (and not a Nia retry)
+
+The v1 attempt tried to bypass Nia's inline-payload limit with chunked
+uploads (commit 2123a3e, reverted). That attempt revealed the real ceiling
+was *server-side indexing throughput* on a 14MB corpus, not the upload path:
+the chunked POST succeeded in 53s, then Nia's downstream indexer never
+flipped the source to `indexed` within 15 minutes. That is a vendor-side
+bottleneck — no client-side change can fix it without fragmenting the
+per-engagement corpus into many sources, which defeats the retrieval design.
+
+ChromaDB sidesteps the entire remote-indexing path. With `PersistentClient`
+the work is local, bounded by Gemini embeddings batch latency (seconds for
+1MB corpora, scales linearly). The migration costs one new dependency
+(`chromadb`) and ~150 LOC; in exchange F100-shape corpora become viable
+without renegotiating throughput with a vendor.
+
+The validator's tiny canonical-vocabulary corpus is the opposite shape —
+small, static, indexed once via `seed_nia.py` — and Nia's reranker quality
+is the value there, not throughput. So the validator stays on Nia.

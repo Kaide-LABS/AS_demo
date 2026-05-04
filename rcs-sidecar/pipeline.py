@@ -139,7 +139,7 @@ async def _safe_extract(coro, agent_name, broadcaster):
         return ExtractionResult(agent_name=agent_name, extracted_fields={}, citations=[], validation_passed=False, validation_errors=[str(e)])
 
 async def run_calibration(project_id: str, brief: str, uploads: list[UploadFile], broadcaster: TheaterBroadcaster) -> RadiantPersonaCalibration | PartialCalibrationResponse:
-    from validators import nia_corpus
+    from retrieval import chroma_corpus as nia_corpus
     cost_tracker = CostTracker(broadcaster.job_id)
     set_active_cost_tracker(cost_tracker)
     logger.bind(trace_id=broadcaster.job_id, project_id=project_id)

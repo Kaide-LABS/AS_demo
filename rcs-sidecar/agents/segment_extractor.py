@@ -9,7 +9,7 @@ from theater import TheaterBroadcaster
 from agents.client import generate_structured, MODEL_FLASH, client
 from agents._citations import coerce_citations
 from google.genai import types
-from validators import nia_corpus
+from retrieval import chroma_corpus as nia_corpus
 
 AGENT_NAME = "segment_extractor"
 logger = structlog.get_logger()

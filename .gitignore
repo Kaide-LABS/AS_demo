@@ -12,3 +12,5 @@ build/
 rcs-sidecar/validators/nia_sources.json
 _chunk_diag*.json
 rcs-sidecar/fixtures/stress_test_f100/
+rcs-sidecar/data/chromadb/
+data/chromadb/
