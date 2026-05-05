@@ -12,6 +12,7 @@ class ArtifactType(str, Enum):
     ETHNOGRAPHY = "ethnography"
     COMPETITIVE_INTEL = "competitive_intel"
     VERBATIM_CORPUS = "verbatim_corpus"
+    REGULATORY_FILING = "regulatory_filing"
     OTHER = "other"
 
 class FieldState(str, Enum):

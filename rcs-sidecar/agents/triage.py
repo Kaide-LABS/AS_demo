@@ -1,3 +1,5 @@
+import re
+
 from schemas import TriageManifest, SourceArtifact, ArtifactClassification, ArtifactType
 from theater import TheaterBroadcaster
 from agents.client import generate_structured, MODEL_FLASH_LITE, client
@@ -6,8 +8,18 @@ from google.genai import types
 SYSTEM_PROMPT = """You are a document classifier for enterprise market research artifacts.
 Classify each document into exactly one category.
 Categories: brand_tracker, focus_group_transcript, segmentation_study,
-crm_export, survey_instrument, ethnography, competitive_intel, verbatim_corpus, other.
+crm_export, survey_instrument, ethnography, competitive_intel, verbatim_corpus,
+regulatory_filing, other.
+
+Use regulatory_filing for SEC filings or regulatory documents: 10-K, 10-Q, 20-F,
+8-K, 6-K, DEF14A, S-1, S-3, S-4, or similar SEC/EDGAR submissions.
+
 For each artifact, also specify extraction_strategy as "default"."""
+
+_REGULATORY_FILENAME = re.compile(
+    r"^(10-?K|10-?Q|20-?F|8-?K|6-?K|DEF\s*14A|S-?[134])\b",
+    re.IGNORECASE,
+)
 
 
 async def triage_agent(artifacts: list[SourceArtifact], broadcaster: TheaterBroadcaster) -> TriageManifest:
@@ -34,7 +46,9 @@ async def triage_agent(artifacts: list[SourceArtifact], broadcaster: TheaterBroa
     for a in artifacts:
         t = ArtifactType.OTHER
         fn = a.filename.lower()
-        if "brand" in fn or "tracker" in fn:
+        if _REGULATORY_FILENAME.match(a.filename):
+            t = ArtifactType.REGULATORY_FILING
+        elif "brand" in fn or "tracker" in fn:
             t = ArtifactType.BRAND_TRACKER
         elif "segment" in fn:
             t = ArtifactType.SEGMENTATION_STUDY

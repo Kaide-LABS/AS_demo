@@ -42,15 +42,15 @@ class FieldStateEngine:
 
         for c in manifest.classifications:
             t = c.artifact_type.value
-            if t in ["segmentation_study", "survey_instrument", "brand_tracker"]:
+            if t in ["segmentation_study", "survey_instrument", "brand_tracker", "regulatory_filing"]:
                 segment_artifacts.append(c.artifact_id)
-            if t in ["focus_group_transcript", "verbatim_corpus", "ethnography"]:
+            if t in ["focus_group_transcript", "verbatim_corpus", "ethnography", "regulatory_filing"]:
                 verbatim_artifacts.append(c.artifact_id)
-            if t == "crm_export":
+            if t in ["crm_export", "regulatory_filing"]:
                 demographic_artifacts.append(c.artifact_id)
-            if t in ["ethnography", "competitive_intel", "survey_instrument", "other"]:
+            if t in ["ethnography", "competitive_intel", "survey_instrument", "other", "regulatory_filing"]:
                 behavioral_artifacts.append(c.artifact_id)
-            if t in ["brand_tracker", "competitive_intel"]:
+            if t in ["brand_tracker", "competitive_intel", "regulatory_filing"]:
                 benchmark_artifacts.append(c.artifact_id)
 
         if segment_artifacts:
