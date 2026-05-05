@@ -413,14 +413,16 @@ ChromaDB lifecycle on the post-fix Pfizer run: `index=1 / query=3
 (returned 20/20/30 chunks) / teardown=1`, leftover collections `[]`.
 
 **Generalization verified (2026-05-05).** The same flag-ON harness, parameterized
-as `tests/qa_f100_generalization.py`, was run against two additional industries
-to confirm the fix is not Pfizer-shaped:
+as `tests/qa_f100_generalization.py`, was run across four industries (pharma,
+financial services, tech, consumer goods) to confirm the fix is not
+Pfizer-shaped:
 
 | Corpus | Industry | Chars (post-strip) | fields_validated | elapsed | segments | query_calls |
 |---|---|---:|---:|---:|---:|---:|
 | Pfizer | Pharma | 1.6M | 10/11 | 84.8s | 3 | 3 |
 | JPMorgan | Financial services | 2.9M | 10/11 | 152.9s | 5 | 3 |
 | Microsoft | Tech | 0.7M | 10/11 | 93.3s | 3 | 3 |
+| P&G | Consumer goods | 1.1M | 10/11 | 93.6s | 3 | 3 |
 
-All three corpora pass every acceptance criterion (≥7/11 validated, retrieval
+All four corpora pass every acceptance criterion (≥7/11 validated, retrieval
 queries fired, <300s, ≥3 segments, no leftover ChromaDB collections).
