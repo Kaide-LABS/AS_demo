@@ -371,3 +371,43 @@ without renegotiating throughput with a vendor.
 The validator's tiny canonical-vocabulary corpus is the opposite shape —
 small, static, indexed once via `seed_nia.py` — and Nia's reranker quality
 is the value there, not throughput. So the validator stays on Nia.
+
+## RESOLVED — F100 SEC-filing routing gap (commit `5cc3dec`)
+
+**Symptom (flag-ON dry-run, 2026-05-04 Pfizer corpus):** the full
+`pipeline.run_calibration` completed cleanly and the ChromaDB collection
+was created and torn down, but the three retrieval-aware extractors
+(`segment_extractor`, `verbatim_distiller`, `demographic_normalizer`) made
+zero `query_engagement_corpus` calls. Result: `fields_validated = 2/11`
+because the retrieval-aware agents short-circuited at `if not assigned:
+return` before ever reaching the retrieval branch.
+
+**Root cause:** SEC filings (`10-K`, `10-Q`, `20-F`, `8-K`, `6-K`,
+`DEF14A`, `S-1/3/4`) classified as `ArtifactType.OTHER` — the only fit in
+the existing 9-value enum. `FieldStateEngine.plan_extractions` only routes
+`OTHER` to `behavioral_extractor` and `brand_tone_extractor`, so
+segment/verbatim/demographic never got an `AgentAssignment`. The retrieval
+module itself was healthy — the problem was upstream in triage/planner.
+
+**Resolution:** Added `REGULATORY_FILING = "regulatory_filing"` to
+`ArtifactType`, with three surgical edits:
+- `schemas.py` — new enum value.
+- `agents/triage.py` — filename heuristic (`^(10-?K|10-?Q|20-?F|8-?K|6-?K|DEF\s*14A|S-?[134])`,
+  case-insensitive) and a category line in the LLM `SYSTEM_PROMPT`.
+- `field_state.py` — `regulatory_filing` added to the type lists for
+  `segment_artifacts`, `verbatim_artifacts`, `demographic_artifacts`,
+  `behavioral_artifacts`, and `benchmark_artifacts`. (`brand_artifacts`
+  is already universal.)
+
+No changes to any extractor, the retrieval module, validators, or the
+canonical vocabulary.
+
+**Verification:**
+
+| Path | Pre-fix | Post-fix |
+|------|---------|----------|
+| Flag-OFF demo (5 sample artifacts) | 9/11 validated, 4 segs, 20 verbs, 22 flagged, 76.1s | **9/11 validated, 4 segs, 20 verbs, 22 flagged, 65.4s** — unchanged |
+| Flag-ON F100 Pfizer (10-K + 10-Q + 8-K + DEF14A, ~1.6M post-strip chars) | 2/11 validated, 3 segs, 15 verbs, 24 flagged, 112s, **0 query_calls** | **10/11 validated, 3 segs, 15 verbs, 18 flagged, 84.8s, 3 query_calls** |
+
+ChromaDB lifecycle on the post-fix Pfizer run: `index=1 / query=3
+(returned 20/20/30 chunks) / teardown=1`, leftover collections `[]`.
